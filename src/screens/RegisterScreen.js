@@ -138,14 +138,6 @@ export default function RegisterScreen({ navigation }) {
         >
           <ScrollView contentContainerStyle={styles.scrollContainer}>
             <View style={styles.header}>
-              <IconButton
-                icon="arrow-left"
-                iconColor={colors.text.white}
-                size={24}
-                onPress={() => navigation.goBack()}
-                style={styles.backButton}
-              />
-
               <Surface style={styles.logoContainer} elevation={4}>
                 <Text style={styles.logoText}>💰</Text>
               </Surface>
@@ -271,25 +263,6 @@ export default function RegisterScreen({ navigation }) {
                   ) : null}
                 </View>
 
-                <View style={styles.featuresContainer}>
-                  <Text style={styles.featuresTitle}>What you'll get:</Text>
-                  <View style={styles.features}>
-                    <Chip icon="chart-line" compact style={styles.featureChip}>
-                      Expense Tracking
-                    </Chip>
-                    <Chip
-                      icon="shield-check"
-                      compact
-                      style={styles.featureChip}
-                    >
-                      Secure & Private
-                    </Chip>
-                    <Chip icon="database" compact style={styles.featureChip}>
-                      Offline Storage
-                    </Chip>
-                  </View>
-                </View>
-
                 <Button
                   mode="contained"
                   onPress={handleRegister}
@@ -342,12 +315,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: spacing.xxl,
     position: "relative",
-  },
-  backButton: {
-    position: "absolute",
-    top: -20,
-    left: -20,
-    zIndex: 1,
   },
   logoContainer: {
     width: 80,
@@ -405,23 +372,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
     fontWeight: "500",
   },
-  featuresContainer: {
-    marginVertical: spacing.md,
-  },
-  featuresTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: colors.text.primary,
-    marginBottom: spacing.md,
-  },
-  features: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-  },
-  featureChip: {
-    backgroundColor: "#f3f4f6",
-  },
+
   registerButton: {
     marginTop: spacing.sm,
     borderRadius: borderRadius.md,

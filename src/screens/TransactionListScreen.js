@@ -14,7 +14,6 @@ import {
   Searchbar,
   Chip,
   IconButton,
-  Surface,
   Menu,
   Button,
 } from "react-native-paper";
@@ -472,10 +471,6 @@ export default function TransactionListScreen({ navigation }) {
     <>
       <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
       <View style={styles.container}>
-        <Surface style={styles.headerSurface} elevation={2}>
-          <Text style={styles.headerTitle}>Transactions</Text>
-        </Surface>
-
         <FlatList
           data={filteredTransactions}
           renderItem={renderTransaction}
@@ -510,12 +505,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  headerSurface: {
-    backgroundColor: colors.primary,
-    paddingTop: 40,
-    paddingBottom: spacing.lg,
-    paddingHorizontal: spacing.lg,
-  },
+
   headerTitle: {
     fontSize: typography.sizes.xxl,
     fontWeight: typography.weights.bold,

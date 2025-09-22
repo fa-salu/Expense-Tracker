@@ -316,7 +316,7 @@ export default function DashboardScreen({ navigation }) {
           style={styles.fab}
           icon="plus"
           onPress={() => navigation.navigate("AddTransaction")}
-          label="Add"
+          // label="Add"
           color={colors.text.white}
         />
       </View>
@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: colors.primary,
-    paddingTop: 40,
+    paddingTop: 8,
     paddingBottom: spacing.lg,
   },
   headerContent: {
