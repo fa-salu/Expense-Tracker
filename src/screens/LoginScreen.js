@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   StyleSheet,
   Alert,
   KeyboardAvoidingView,
   Platform,
-  ScrollView
-} from 'react-native';
+  ScrollView,
+  StatusBar,
+} from "react-native";
 import {
   TextInput,
   Button,
@@ -14,206 +15,278 @@ import {
   Title,
   Paragraph,
   Text,
-  Switch
-} from 'react-native-paper';
-import { registerUser, loginUser, initDatabase } from '../utils/database';
+  Surface,
+} from "react-native-paper";
+import { LinearGradient } from "expo-linear-gradient";
+import { useAuth } from "../context/AuthContext";
+import { loginUser } from "../utils/database";
+import { colors, spacing, borderRadius } from "../theme/colors";
 
-export default function LoginScreen({ onLogin }) {
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isRegisterMode, setIsRegisterMode] = useState(false);
+export default function LoginScreen({ navigation }) {
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [phoneError, setPhoneError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
 
-  const handleSubmit = async () => {
-    if (!phoneNumber.trim() || !password.trim()) {
-      Alert.alert('Error', 'Please fill in all fields');
-      return;
-    }
+  const { signIn, setLoading } = useAuth();
 
-    // Basic phone number validation
+  const validatePhone = (phone) => {
     const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
-    if (!phoneRegex.test(phoneNumber.replace(/\s/g, ''))) {
-      Alert.alert('Error', 'Please enter a valid phone number');
-      return;
+    if (!phone.trim()) {
+      setPhoneError("Phone number is required");
+      return false;
     }
-
-    // Basic password validation
-    if (password.length < 4) {
-      Alert.alert('Error', 'Password must be at least 4 characters long');
-      return;
+    if (!phoneRegex.test(phone.replace(/\s/g, ""))) {
+      setPhoneError("Please enter a valid phone number");
+      return false;
     }
-
-    setIsLoading(true);
-
-    try {
-      // Initialize database first
-      await initDatabase();
-
-      if (isRegisterMode) {
-        // Register new user
-        const user = await registerUser(phoneNumber, password);
-        Alert.alert(
-          'Success', 
-          'Account created successfully! You can now login.',
-          [
-            {
-              text: 'OK',
-              onPress: () => setIsRegisterMode(false)
-            }
-          ]
-        );
-        // Clear form
-        setPhoneNumber('');
-        setPassword('');
-      } else {
-        // Login existing user
-        const user = await loginUser(phoneNumber, password);
-        onLogin(user);
-      }
-    } catch (error) {
-      if (error.message.includes('UNIQUE constraint failed')) {
-        Alert.alert('Error', 'Phone number already exists. Please login instead.');
-        setIsRegisterMode(false);
-      } else {
-        Alert.alert('Error', error.message || 'Authentication failed. Please try again.');
-      }
-    } finally {
-      setIsLoading(false);
-    }
+    setPhoneError("");
+    return true;
   };
 
-  const toggleMode = () => {
-    setIsRegisterMode(!isRegisterMode);
-    setPhoneNumber('');
-    setPassword('');
+  const validatePassword = (pwd) => {
+    if (!pwd.trim()) {
+      setPasswordError("Password is required");
+      return false;
+    }
+    if (pwd.length < 4) {
+      setPasswordError("Password must be at least 4 characters");
+      return false;
+    }
+    setPasswordError("");
+    return true;
+  };
+
+  const handleLogin = async () => {
+    const isPhoneValid = validatePhone(phoneNumber);
+    const isPasswordValid = validatePassword(password);
+
+    if (!isPhoneValid || !isPasswordValid) {
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const user = await loginUser(phoneNumber, password);
+      signIn(user);
+    } catch (error) {
+      Alert.alert(
+        "Login Failed",
+        error.message || "Please check your credentials and try again."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <KeyboardAvoidingView 
-      style={styles.container} 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.content}>
-          <Card style={styles.card}>
-            <Card.Content>
-              <Title style={styles.title}>Expense Tracker</Title>
-              <Paragraph style={styles.subtitle}>
-                {isRegisterMode ? 'Create your account' : 'Sign in to your account'}
+    <>
+      <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
+      <LinearGradient
+        colors={[
+          colors.gradient.start,
+          colors.gradient.middle,
+          colors.gradient.end,
+        ]}
+        style={styles.gradient}
+      >
+        <KeyboardAvoidingView
+          style={styles.container}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          <ScrollView contentContainerStyle={styles.scrollContainer}>
+            <View style={styles.header}>
+              <Surface style={styles.logoContainer} elevation={4}>
+                <Text style={styles.logoText}>💰</Text>
+              </Surface>
+              <Title style={styles.appTitle}>Expense Tracker</Title>
+              <Paragraph style={styles.welcomeText}>
+                Welcome back! Sign in to continue
               </Paragraph>
-              
-              <View style={styles.modeToggle}>
-                <Text style={styles.modeLabel}>Login</Text>
-                <Switch
-                  value={isRegisterMode}
-                  onValueChange={toggleMode}
-                  color="#6200ea"
-                />
-                <Text style={styles.modeLabel}>Register</Text>
-              </View>
-              
-              <TextInput
-                label="Phone Number"
-                value={phoneNumber}
-                onChangeText={setPhoneNumber}
-                mode="outlined"
-                keyboardType="phone-pad"
-                placeholder="+1234567890"
-                style={styles.input}
-              />
-              
-              <TextInput
-                label="Password"
-                value={password}
-                onChangeText={setPassword}
-                mode="outlined"
-                secureTextEntry
-                style={styles.input}
-              />
-              
-              <Button
-                mode="contained"
-                onPress={handleSubmit}
-                loading={isLoading}
-                disabled={isLoading}
-                style={styles.submitButton}
-                contentStyle={styles.buttonContent}
-              >
-                {isRegisterMode ? 'Register' : 'Login'}
-              </Button>
-              
-              <Button
-                mode="text"
-                onPress={toggleMode}
-                style={styles.toggleButton}
-              >
-                {isRegisterMode 
-                  ? 'Already have an account? Login' 
-                  : "Don't have an account? Register"
-                }
-              </Button>
-            </Card.Content>
-          </Card>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+            </View>
+
+            <Card style={styles.card} elevation={8}>
+              <Card.Content style={styles.cardContent}>
+                <View style={styles.inputContainer}>
+                  <TextInput
+                    label="Phone Number"
+                    value={phoneNumber}
+                    onChangeText={(text) => {
+                      setPhoneNumber(text);
+                      if (phoneError) validatePhone(text);
+                    }}
+                    mode="outlined"
+                    keyboardType="phone-pad"
+                    placeholder="+1234567890"
+                    style={styles.input}
+                    error={!!phoneError}
+                    left={<TextInput.Icon icon="phone" />}
+                    outlineColor="#e2e8f0"
+                    activeOutlineColor={colors.primary}
+                    theme={{ colors: { primary: colors.primary } }}
+                  />
+                  {phoneError ? (
+                    <Text style={styles.errorText}>{phoneError}</Text>
+                  ) : null}
+                </View>
+
+                <View style={styles.inputContainer}>
+                  <TextInput
+                    label="Password"
+                    value={password}
+                    onChangeText={(text) => {
+                      setPassword(text);
+                      if (passwordError) validatePassword(text);
+                    }}
+                    mode="outlined"
+                    secureTextEntry={!showPassword}
+                    style={styles.input}
+                    error={!!passwordError}
+                    left={<TextInput.Icon icon="lock" />}
+                    right={
+                      <TextInput.Icon
+                        icon={showPassword ? "eye-off" : "eye"}
+                        onPress={() => setShowPassword(!showPassword)}
+                      />
+                    }
+                    outlineColor="#e2e8f0"
+                    activeOutlineColor={colors.primary}
+                    theme={{ colors: { primary: colors.primary } }}
+                  />
+                  {passwordError ? (
+                    <Text style={styles.errorText}>{passwordError}</Text>
+                  ) : null}
+                </View>
+
+                <Button
+                  mode="contained"
+                  onPress={handleLogin}
+                  style={styles.loginButton}
+                  contentStyle={styles.buttonContent}
+                  labelStyle={styles.buttonLabel}
+                >
+                  Sign In
+                </Button>
+
+                <View style={styles.divider}>
+                  <View style={styles.dividerLine} />
+                  <Text style={styles.dividerText}>or</Text>
+                  <View style={styles.dividerLine} />
+                </View>
+
+                <Button
+                  mode="text"
+                  onPress={() => navigation.navigate("Register")}
+                  style={styles.registerButton}
+                  labelStyle={styles.registerButtonLabel}
+                >
+                  Don't have an account? Sign Up
+                </Button>
+              </Card.Content>
+            </Card>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </LinearGradient>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
+  gradient: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   scrollContainer: {
     flexGrow: 1,
-    justifyContent: 'center',
-    padding: 20,
+    justifyContent: "center",
+    padding: spacing.lg,
+    paddingTop: 60,
   },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
+  header: {
+    alignItems: "center",
+    marginBottom: spacing.xxl,
+  },
+  logoContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: borderRadius.round,
+    backgroundColor: colors.surface,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: spacing.md,
+  },
+  logoText: {
+    fontSize: 32,
+  },
+  appTitle: {
+    fontSize: 32,
+    fontWeight: "bold",
+    color: colors.text.white,
+    marginBottom: spacing.sm,
+    textAlign: "center",
+  },
+  welcomeText: {
+    fontSize: 16,
+    color: "rgba(255, 255, 255, 0.9)",
+    textAlign: "center",
   },
   card: {
-    elevation: 4,
-    borderRadius: 12,
+    borderRadius: borderRadius.xl,
+    backgroundColor: colors.surface,
   },
-  title: {
-    textAlign: 'center',
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#6200ea',
-    marginBottom: 8,
+  cardContent: {
+    padding: spacing.xl,
   },
-  subtitle: {
-    textAlign: 'center',
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 24,
-  },
-  modeToggle: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 24,
-  },
-  modeLabel: {
-    fontSize: 16,
-    color: '#666',
-    marginHorizontal: 12,
+  inputContainer: {
+    marginBottom: spacing.lg,
   },
   input: {
-    marginBottom: 16,
+    backgroundColor: colors.surface,
   },
-  submitButton: {
-    marginTop: 8,
-    marginBottom: 16,
-    backgroundColor: '#6200ea',
+  errorText: {
+    color: colors.error,
+    fontSize: 12,
+    marginTop: spacing.xs,
+    marginLeft: spacing.md,
+  },
+  loginButton: {
+    marginTop: spacing.sm,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.primary,
+    elevation: 2,
   },
   buttonContent: {
-    paddingVertical: 8,
+    paddingVertical: spacing.md,
   },
-  toggleButton: {
-    marginTop: 8,
+  buttonLabel: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  divider: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: spacing.xl,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "#e2e8f0",
+  },
+  dividerText: {
+    color: colors.text.secondary,
+    marginHorizontal: spacing.md,
+    fontSize: 14,
+  },
+  registerButton: {
+    marginTop: spacing.sm,
+  },
+  registerButtonLabel: {
+    color: colors.primary,
+    fontSize: 14,
+    fontWeight: "600",
   },
 });

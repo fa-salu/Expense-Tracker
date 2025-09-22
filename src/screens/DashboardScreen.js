@@ -1,42 +1,57 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from "react";
 import {
   View,
   StyleSheet,
   ScrollView,
-  RefreshControl
-} from 'react-native';
+  RefreshControl,
+  StatusBar,
+  Dimensions,
+} from "react-native";
 import {
   Card,
   Title,
-  Paragraph,
   FAB,
   Button,
   Text,
-  Surface
-} from 'react-native-paper';
-import { useFocusEffect } from '@react-navigation/native';
-import { getTransactions, calculateSummary } from '../utils/database';
-import { TRANSACTION_TYPES } from '../types';
+  Surface,
+  IconButton,
+  Chip,
+} from "react-native-paper";
+import { useFocusEffect } from "@react-navigation/native";
+import { useAuth } from "../context/AuthContext";
+import { getTransactions, calculateSummary } from "../utils/database";
+import { TRANSACTION_TYPES } from "../types";
+import {
+  colors,
+  spacing,
+  borderRadius,
+  typography,
+  shadows,
+} from "../theme/colors";
 
-export default function DashboardScreen({ navigation, onLogout, currentUser }) {
+export default function DashboardScreen({ navigation }) {
+  const { user: currentUser, signOut } = useAuth();
   const [transactions, setTransactions] = useState([]);
   const [summary, setSummary] = useState({
     totalIncome: 0,
     totalExpenses: 0,
-    balance: 0
+    balance: 0,
   });
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const loadData = async () => {
-    if (!currentUser) return;
-    
+    if (!currentUser?.id) {
+      console.log("No user found:", currentUser);
+      return;
+    }
+
     try {
       const data = await getTransactions(currentUser.id);
       setTransactions(data);
       const summaryData = calculateSummary(data);
       setSummary(summaryData);
     } catch (error) {
-      console.log('Error loading data:', error);
+      console.log("Error loading data:", error);
     }
   };
 
@@ -53,278 +68,497 @@ export default function DashboardScreen({ navigation, onLogout, currentUser }) {
   };
 
   const formatCurrency = (amount) => {
-    return `$${parseFloat(amount).toFixed(2)}`;
+    return `$${Math.abs(parseFloat(amount)).toFixed(2)}`;
   };
 
   const getBalanceColor = (balance) => {
-    if (balance > 0) return '#4caf50';
-    if (balance < 0) return '#f44336';
-    return '#666';
+    if (balance > 0) return colors.success;
+    if (balance < 0) return colors.error;
+    return colors.text.secondary;
   };
 
-  return (
-    <View style={styles.container}>
-      <ScrollView
-        style={styles.scrollView}
-        refreshControl={
-          <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
-        }
-      >
-        <View style={styles.header}>
-          <View>
-            <Title style={styles.headerTitle}>Dashboard</Title>
-            <Text style={styles.userInfo}>
-              Welcome, {currentUser?.phone_number}
-            </Text>
-          </View>
-          <Button
-            mode="outlined"
-            onPress={onLogout}
-            style={styles.logoutButton}
-            compact
+  const renderSummaryCard = (title, amount, color, icon, isBalance = false) => (
+    <Card style={[styles.summaryCard, isBalance && styles.balanceCard]}>
+      <Card.Content style={styles.summaryContent}>
+        <View style={styles.summaryHeader}>
+          <View
+            style={[styles.iconContainer, { backgroundColor: color + "15" }]}
           >
-            Logout
-          </Button>
+            <Text style={[styles.iconText, { color }]}>{icon}</Text>
+          </View>
+          <Text style={styles.summaryTitle}>{title}</Text>
         </View>
+        <Text style={[styles.summaryAmount, { color }]}>
+          {isBalance && balance !== 0 && (balance > 0 ? "+" : "-")}
+          {formatCurrency(amount)}
+        </Text>
+      </Card.Content>
+    </Card>
+  );
 
-        {/* Summary Cards */}
-        <View style={styles.summaryContainer}>
-          <Card style={[styles.summaryCard, styles.balanceCard]}>
-            <Card.Content style={styles.cardContent}>
-              <Text style={styles.cardLabel}>Balance</Text>
-              <Text style={[styles.cardAmount, { color: getBalanceColor(summary.balance) }]}>
-                {formatCurrency(summary.balance)}
-              </Text>
+  const balance = summary.totalIncome - summary.totalExpenses;
+
+  return (
+    <>
+      <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
+      <View style={styles.container}>
+        <Surface style={styles.header} elevation={2}>
+          <View style={styles.headerContent}>
+            <View style={styles.headerLeft}>
+              <View style={styles.welcomeContainer}>
+                <Text style={styles.welcomeText}>Welcome back</Text>
+                <Title style={styles.userName}>
+                  {currentUser?.phone_number?.replace(
+                    /(.{3})(.{3})(.{4})/,
+                    "($1) $2-$3"
+                  ) || "User"}
+                </Title>
+              </View>
+            </View>
+            <IconButton
+              icon="logout"
+              iconColor={colors.text.white}
+              size={22}
+              onPress={signOut}
+              style={styles.logoutButton}
+            />
+          </View>
+        </Surface>
+
+        <ScrollView
+          style={styles.scrollView}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
+          }
+        >
+          <View style={styles.balanceSection}>
+            <Card style={[styles.balanceMainCard, shadows.large]}>
+              <Card.Content style={styles.balanceContent}>
+                <Text style={styles.balanceLabel}>Total Balance</Text>
+                <Text
+                  style={[
+                    styles.balanceAmount,
+                    { color: getBalanceColor(balance) },
+                  ]}
+                >
+                  {balance >= 0 ? "+" : ""}${Math.abs(balance).toFixed(2)}
+                </Text>
+                <View style={styles.balanceIndicator}>
+                  <Chip
+                    mode="flat"
+                    compact
+                    style={[
+                      styles.balanceChip,
+                      { backgroundColor: getBalanceColor(balance) + "20" },
+                    ]}
+                    textStyle={{
+                      color: getBalanceColor(balance),
+                      fontSize: typography.sizes.xs,
+                    }}
+                  >
+                    {balance >= 0 ? "↗ Positive" : "↘ Negative"}
+                  </Chip>
+                </View>
+              </Card.Content>
+            </Card>
+          </View>
+
+          <View style={styles.summaryRow}>
+            {renderSummaryCard(
+              "Income",
+              summary.totalIncome,
+              colors.success,
+              "↗"
+            )}
+            {renderSummaryCard(
+              "Expenses",
+              summary.totalExpenses,
+              colors.error,
+              "↙"
+            )}
+          </View>
+
+          <Card style={styles.actionCard}>
+            <Card.Content style={styles.actionContent}>
+              <Text style={styles.sectionTitle}>Quick Actions</Text>
+              <View style={styles.actionButtons}>
+                <Button
+                  mode="contained"
+                  onPress={() => navigation.navigate("AddTransaction")}
+                  style={[styles.actionButton, styles.primaryAction]}
+                  contentStyle={styles.buttonContent}
+                  labelStyle={styles.buttonLabel}
+                  icon="plus"
+                >
+                  Add Transaction
+                </Button>
+                <Button
+                  mode="outlined"
+                  onPress={() => navigation.navigate("TransactionList")}
+                  style={[styles.actionButton, styles.secondaryAction]}
+                  contentStyle={styles.buttonContent}
+                  labelStyle={[styles.buttonLabel, { color: colors.primary }]}
+                  icon="format-list-bulleted"
+                >
+                  View All
+                </Button>
+              </View>
             </Card.Content>
           </Card>
 
-          <View style={styles.incomeExpenseRow}>
-            <Card style={[styles.summaryCard, styles.incomeCard]}>
-              <Card.Content style={styles.cardContent}>
-                <Text style={styles.cardLabel}>Income</Text>
-                <Text style={[styles.cardAmount, { color: '#4caf50' }]}>
-                  {formatCurrency(summary.totalIncome)}
-                </Text>
-              </Card.Content>
-            </Card>
+          <Card style={styles.recentCard}>
+            <Card.Content style={styles.recentContent}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Recent Activity</Text>
+                {transactions.length > 3 && (
+                  <Button
+                    mode="text"
+                    compact
+                    onPress={() => navigation.navigate("TransactionList")}
+                    labelStyle={styles.viewAllLabel}
+                  >
+                    View All
+                  </Button>
+                )}
+              </View>
 
-            <Card style={[styles.summaryCard, styles.expenseCard]}>
-              <Card.Content style={styles.cardContent}>
-                <Text style={styles.cardLabel}>Expenses</Text>
-                <Text style={[styles.cardAmount, { color: '#f44336' }]}>
-                  {formatCurrency(summary.totalExpenses)}
-                </Text>
-              </Card.Content>
-            </Card>
-          </View>
-        </View>
-
-        {/* Quick Actions */}
-        <Card style={styles.actionsCard}>
-          <Card.Content>
-            <Title style={styles.actionsTitle}>Quick Actions</Title>
-            <View style={styles.actionButtons}>
-              <Button
-                mode="contained"
-                onPress={() => navigation.navigate('AddTransaction')}
-                style={[styles.actionButton, { backgroundColor: '#4caf50' }]}
-                icon="plus"
-              >
-                Add Transaction
-              </Button>
-              <Button
-                mode="outlined"
-                onPress={() => navigation.navigate('TransactionList')}
-                style={styles.actionButton}
-                icon="list"
-              >
-                View All
-              </Button>
-            </View>
-          </Card.Content>
-        </Card>
-
-        {/* Recent Transactions Preview */}
-        <Card style={styles.recentCard}>
-          <Card.Content>
-            <Title style={styles.recentTitle}>Recent Transactions</Title>
-            {transactions.length === 0 ? (
-              <Paragraph style={styles.noTransactions}>
-                No transactions yet. Add your first transaction!
-              </Paragraph>
-            ) : (
-              transactions.slice(0, 3).map((transaction) => (
-                <View key={transaction.id} style={styles.transactionItem}>
-                  <View style={styles.transactionInfo}>
-                    <Text style={styles.transactionCategory}>
-                      {transaction.category}
-                    </Text>
-                    <Text style={styles.transactionDate}>
-                      {new Date(transaction.createdAt).toLocaleDateString()}
+              {transactions.length === 0 ? (
+                <View style={styles.emptyState}>
+                  <Text style={styles.emptyIcon}>📊</Text>
+                  <Text style={styles.emptyTitle}>No transactions yet</Text>
+                  <Text style={styles.emptySubtitle}>
+                    Add your first transaction to start tracking
+                  </Text>
+                  <Button
+                    mode="contained"
+                    compact
+                    onPress={() => navigation.navigate("AddTransaction")}
+                    style={styles.emptyButton}
+                    labelStyle={styles.emptyButtonLabel}
+                  >
+                    Get Started
+                  </Button>
+                </View>
+              ) : (
+                transactions.slice(0, 3).map((transaction, index) => (
+                  <View
+                    key={transaction.id || index}
+                    style={styles.transactionItem}
+                  >
+                    <View
+                      style={[
+                        styles.transactionIcon,
+                        {
+                          backgroundColor:
+                            transaction.type === TRANSACTION_TYPES.INCOME
+                              ? colors.success + "15"
+                              : colors.error + "15",
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.transactionIconText,
+                          {
+                            color:
+                              transaction.type === TRANSACTION_TYPES.INCOME
+                                ? colors.success
+                                : colors.error,
+                          },
+                        ]}
+                      >
+                        {transaction.type === TRANSACTION_TYPES.INCOME
+                          ? "↗"
+                          : "↙"}
+                      </Text>
+                    </View>
+                    <View style={styles.transactionDetails}>
+                      <Text style={styles.transactionCategory}>
+                        {transaction.category}
+                      </Text>
+                      <Text style={styles.transactionDate}>
+                        {new Date(transaction.createdAt).toLocaleDateString(
+                          "en-US",
+                          {
+                            month: "short",
+                            day: "numeric",
+                          }
+                        )}
+                      </Text>
+                    </View>
+                    <Text
+                      style={[
+                        styles.transactionAmount,
+                        {
+                          color:
+                            transaction.type === TRANSACTION_TYPES.INCOME
+                              ? colors.success
+                              : colors.error,
+                        },
+                      ]}
+                    >
+                      {transaction.type === TRANSACTION_TYPES.INCOME
+                        ? "+"
+                        : "-"}
+                      {formatCurrency(transaction.amount)}
                     </Text>
                   </View>
-                  <Text
-                    style={[
-                      styles.transactionAmount,
-                      {
-                        color: transaction.type === TRANSACTION_TYPES.INCOME ? '#4caf50' : '#f44336'
-                      }
-                    ]}
-                  >
-                    {transaction.type === TRANSACTION_TYPES.INCOME ? '+' : '-'}
-                    {formatCurrency(transaction.amount)}
-                  </Text>
-                </View>
-              ))
-            )}
-            {transactions.length > 3 && (
-              <Button
-                mode="text"
-                onPress={() => navigation.navigate('TransactionList')}
-                style={styles.viewAllButton}
-              >
-                View All Transactions
-              </Button>
-            )}
-          </Card.Content>
-        </Card>
-      </ScrollView>
+                ))
+              )}
+            </Card.Content>
+          </Card>
 
-      <FAB
-        style={styles.fab}
-        icon="plus"
-        onPress={() => navigation.navigate('AddTransaction')}
-        label="Add Transaction"
-      />
-    </View>
+          <View style={styles.bottomSpacer} />
+        </ScrollView>
+
+        <FAB
+          style={styles.fab}
+          icon="plus"
+          onPress={() => navigation.navigate("AddTransaction")}
+          label="Add"
+          color={colors.text.white}
+        />
+      </View>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.background,
+  },
+  header: {
+    backgroundColor: colors.primary,
+    paddingTop: 40,
+    paddingBottom: spacing.lg,
+  },
+  headerContent: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: spacing.lg,
+  },
+  headerLeft: {
+    flex: 1,
+  },
+  welcomeContainer: {
+    flexDirection: "column",
+  },
+  welcomeText: {
+    fontSize: typography.sizes.sm,
+    color: "rgba(255, 255, 255, 0.8)",
+    marginBottom: 2,
+  },
+  userName: {
+    fontSize: typography.sizes.xl,
+    fontWeight: typography.weights.bold,
+    color: colors.text.white,
+  },
+  logoutButton: {
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
   },
   scrollView: {
     flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    paddingTop: 40,
+  balanceSection: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
   },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#6200ea',
+  balanceMainCard: {
+    borderRadius: borderRadius.lg,
+    backgroundColor: colors.surface,
   },
-  userInfo: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 4,
+  balanceContent: {
+    alignItems: "center",
+    paddingVertical: spacing.xl,
   },
-  logoutButton: {
-    borderColor: '#6200ea',
+  balanceLabel: {
+    fontSize: typography.sizes.sm,
+    color: colors.text.secondary,
+    marginBottom: spacing.sm,
   },
-  summaryContainer: {
-    paddingHorizontal: 20,
-    marginBottom: 20,
+  balanceAmount: {
+    fontSize: typography.sizes.hero,
+    fontWeight: typography.weights.bold,
+    marginBottom: spacing.md,
+  },
+  balanceIndicator: {
+    flexDirection: "row",
+  },
+  balanceChip: {
+    paddingHorizontal: spacing.sm,
+  },
+  summaryRow: {
+    flexDirection: "row",
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    gap: spacing.md,
   },
   summaryCard: {
-    marginBottom: 12,
-    elevation: 2,
+    flex: 1,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.surface,
+    ...shadows.medium,
   },
-  balanceCard: {
-    backgroundColor: '#fff',
+  summaryContent: {
+    paddingVertical: spacing.lg,
   },
-  incomeExpenseRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  summaryHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: spacing.sm,
   },
-  incomeCard: {
-    flex: 0.48,
-    backgroundColor: '#e8f5e8',
+  iconContainer: {
+    width: 28,
+    height: 28,
+    borderRadius: borderRadius.sm,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: spacing.sm,
   },
-  expenseCard: {
-    flex: 0.48,
-    backgroundColor: '#ffebee',
+  iconText: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.semibold,
   },
-  cardContent: {
-    alignItems: 'center',
-    paddingVertical: 16,
+  summaryTitle: {
+    fontSize: typography.sizes.sm,
+    color: colors.text.secondary,
   },
-  cardLabel: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 4,
+  summaryAmount: {
+    fontSize: typography.sizes.lg,
+    fontWeight: typography.weights.bold,
   },
-  cardAmount: {
-    fontSize: 20,
-    fontWeight: 'bold',
+  actionCard: {
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.lg,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.surface,
+    ...shadows.medium,
   },
-  actionsCard: {
-    marginHorizontal: 20,
-    marginBottom: 20,
-    elevation: 2,
+  actionContent: {
+    paddingVertical: spacing.lg,
   },
-  actionsTitle: {
-    fontSize: 18,
-    marginBottom: 16,
+  sectionTitle: {
+    fontSize: typography.sizes.lg,
+    fontWeight: typography.weights.semibold,
+    color: colors.text.primary,
+    marginBottom: spacing.lg,
   },
   actionButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+    flexDirection: "row",
+    gap: spacing.md,
   },
   actionButton: {
-    flex: 0.45,
+    flex: 1,
+    borderRadius: borderRadius.sm,
+  },
+  primaryAction: {
+    backgroundColor: colors.primary,
+  },
+  secondaryAction: {
+    borderColor: colors.primary,
+  },
+  buttonContent: {
+    paddingVertical: spacing.sm,
+  },
+  buttonLabel: {
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.medium,
   },
   recentCard: {
-    marginHorizontal: 20,
-    marginBottom: 20,
-    elevation: 2,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.lg,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.surface,
+    ...shadows.medium,
   },
-  recentTitle: {
-    fontSize: 18,
-    marginBottom: 16,
+  recentContent: {
+    paddingVertical: spacing.lg,
   },
-  noTransactions: {
-    textAlign: 'center',
-    color: '#666',
-    fontStyle: 'italic',
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: spacing.lg,
+  },
+  viewAllLabel: {
+    fontSize: typography.sizes.sm,
+    color: colors.primary,
+  },
+  emptyState: {
+    alignItems: "center",
+    paddingVertical: spacing.xxl,
+  },
+  emptyIcon: {
+    fontSize: 32,
+    marginBottom: spacing.md,
+  },
+  emptyTitle: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.medium,
+    color: colors.text.primary,
+    marginBottom: spacing.sm,
+  },
+  emptySubtitle: {
+    fontSize: typography.sizes.sm,
+    color: colors.text.secondary,
+    textAlign: "center",
+    marginBottom: spacing.lg,
+  },
+  emptyButton: {
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.sm,
+  },
+  emptyButtonLabel: {
+    fontSize: typography.sizes.sm,
   },
   transactionItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: colors.border.light,
   },
-  transactionInfo: {
+  transactionIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: borderRadius.sm,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: spacing.md,
+  },
+  transactionIconText: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.semibold,
+  },
+  transactionDetails: {
     flex: 1,
   },
   transactionCategory: {
-    fontSize: 16,
-    fontWeight: '500',
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.medium,
+    color: colors.text.primary,
   },
   transactionDate: {
-    fontSize: 12,
-    color: '#666',
+    fontSize: typography.sizes.xs,
+    color: colors.text.secondary,
+    marginTop: 2,
   },
   transactionAmount: {
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.semibold,
   },
-  viewAllButton: {
-    marginTop: 8,
+  bottomSpacer: {
+    height: 100,
   },
   fab: {
-    position: 'absolute',
-    margin: 16,
+    position: "absolute",
+    margin: spacing.lg,
     right: 0,
     bottom: 0,
-    backgroundColor: '#6200ea',
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.round,
   },
 });
