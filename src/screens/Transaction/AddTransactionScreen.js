@@ -69,7 +69,7 @@ export default function AddTransactionScreen({ navigation }) {
         "Success! ✅",
         `${
           type === TRANSACTION_TYPES.INCOME ? "Income" : "Expense"
-        } of $${amount} added successfully`,
+        } of ₹${amount} added successfully`,
         [
           {
             text: "Add Another",
@@ -158,7 +158,7 @@ export default function AddTransactionScreen({ navigation }) {
                     mode="outlined"
                     keyboardType="numeric"
                     style={styles.amountInput}
-                    left={<TextInput.Icon icon="currency-usd" />}
+                    left={<TextInput.Icon icon="currency-rupee" />}
                     placeholder="0.00"
                     outlineColor={colors.border.light}
                     activeOutlineColor={
@@ -176,24 +176,6 @@ export default function AddTransactionScreen({ navigation }) {
                     }}
                   />
                 </View>
-                {amount && (
-                  <View style={styles.preview}>
-                    <Text
-                      style={[
-                        styles.previewText,
-                        {
-                          color:
-                            type === TRANSACTION_TYPES.INCOME
-                              ? colors.success
-                              : colors.error,
-                        },
-                      ]}
-                    >
-                      {type === TRANSACTION_TYPES.INCOME ? "+" : "-"}$
-                      {formatCurrency(amount)}
-                    </Text>
-                  </View>
-                )}
               </Card.Content>
             </Card>
 
@@ -308,7 +290,7 @@ export default function AddTransactionScreen({ navigation }) {
                         },
                       ]}
                     >
-                      ${formatCurrency(amount)}
+                      ₹{formatCurrency(amount)}
                     </Text>
                   </View>
                   <View style={styles.summaryRow}>

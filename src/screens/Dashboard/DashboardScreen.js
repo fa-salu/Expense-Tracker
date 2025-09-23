@@ -16,6 +16,7 @@ import {
   Surface,
   IconButton,
   Chip,
+  Appbar,
 } from "react-native-paper";
 import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../../context/AuthContext";
@@ -68,7 +69,7 @@ export default function DashboardScreen({ navigation }) {
   };
 
   const formatCurrency = (amount) => {
-    return `$${Math.abs(parseFloat(amount)).toFixed(2)}`;
+    return `₹${Math.abs(parseFloat(amount)).toFixed(2)}`;
   };
 
   const getBalanceColor = (balance) => {
@@ -102,29 +103,6 @@ export default function DashboardScreen({ navigation }) {
     <>
       <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
       <View style={styles.container}>
-        <Surface style={styles.header} elevation={2}>
-          <View style={styles.headerContent}>
-            <View style={styles.headerLeft}>
-              <View style={styles.welcomeContainer}>
-                <Text style={styles.welcomeText}>Welcome back</Text>
-                <Title style={styles.userName}>
-                  {currentUser?.phone_number?.replace(
-                    /(.{3})(.{3})(.{4})/,
-                    "($1) $2-$3"
-                  ) || "User"}
-                </Title>
-              </View>
-            </View>
-            <IconButton
-              icon="logout"
-              iconColor={colors.text.white}
-              size={22}
-              onPress={signOut}
-              style={styles.logoutButton}
-            />
-          </View>
-        </Surface>
-
         <ScrollView
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
@@ -142,7 +120,7 @@ export default function DashboardScreen({ navigation }) {
                     { color: getBalanceColor(balance) },
                   ]}
                 >
-                  {balance >= 0 ? "+" : ""}${Math.abs(balance).toFixed(2)}
+                  {balance >= 0 ? "+" : ""}₹{Math.abs(balance).toFixed(2)}
                 </Text>
                 <View style={styles.balanceIndicator}>
                   <Chip
@@ -178,34 +156,6 @@ export default function DashboardScreen({ navigation }) {
               "↙"
             )}
           </View>
-
-          <Card style={styles.actionCard}>
-            <Card.Content style={styles.actionContent}>
-              <Text style={styles.sectionTitle}>Quick Actions</Text>
-              <View style={styles.actionButtons}>
-                <Button
-                  mode="contained"
-                  onPress={() => navigation.navigate("AddTransaction")}
-                  style={[styles.actionButton, styles.primaryAction]}
-                  contentStyle={styles.buttonContent}
-                  labelStyle={styles.buttonLabel}
-                  icon="plus"
-                >
-                  Add Transaction
-                </Button>
-                <Button
-                  mode="outlined"
-                  onPress={() => navigation.navigate("TransactionList")}
-                  style={[styles.actionButton, styles.secondaryAction]}
-                  contentStyle={styles.buttonContent}
-                  labelStyle={[styles.buttonLabel, { color: colors.primary }]}
-                  icon="format-list-bulleted"
-                >
-                  View All
-                </Button>
-              </View>
-            </Card.Content>
-          </Card>
 
           <Card style={styles.recentCard}>
             <Card.Content style={styles.recentContent}>
@@ -316,7 +266,6 @@ export default function DashboardScreen({ navigation }) {
           style={styles.fab}
           icon="plus"
           onPress={() => navigation.navigate("AddTransaction")}
-          // label="Add"
           color={colors.text.white}
         />
       </View>
@@ -331,33 +280,35 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: colors.primary,
-    paddingTop: 8,
-    paddingBottom: spacing.lg,
+    elevation: 4,
   },
-  headerContent: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+  title: {
+    color: colors.text.white,
+    fontWeight: "600",
+  },
+  logoutButton: {
+    margin: 0,
+  },
+  welcomeSection: {
     paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
   },
-  headerLeft: {
-    flex: 1,
-  },
-  welcomeContainer: {
-    flexDirection: "column",
+  welcomeCard: {
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.surface,
+    ...shadows.medium,
   },
   welcomeText: {
     fontSize: typography.sizes.sm,
-    color: "rgba(255, 255, 255, 0.8)",
+    color: colors.text.secondary,
     marginBottom: 2,
   },
   userName: {
     fontSize: typography.sizes.xl,
     fontWeight: typography.weights.bold,
-    color: colors.text.white,
-  },
-  logoutButton: {
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    color: colors.text.primary,
+    margin: 0,
+    padding: 0,
   },
   scrollView: {
     flex: 1,
