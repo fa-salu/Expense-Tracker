@@ -18,16 +18,16 @@ import {
   Chip,
   Surface,
 } from "react-native-paper";
-import { useAuth } from "../context/AuthContext";
-import { saveTransaction } from "../utils/database";
-import { TRANSACTION_TYPES, TRANSACTION_CATEGORIES } from "../types";
+import { useAuth } from "../../context/AuthContext";
+import { saveTransaction } from "../../database";
+import { TRANSACTION_TYPES, TRANSACTION_CATEGORIES } from "../../types";
 import {
   colors,
   spacing,
   borderRadius,
   typography,
   shadows,
-} from "../theme/colors";
+} from "../../theme/colors";
 
 export default function AddTransactionScreen({ navigation }) {
   const { user: currentUser } = useAuth();

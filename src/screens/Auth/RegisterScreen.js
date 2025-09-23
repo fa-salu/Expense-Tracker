@@ -21,8 +21,8 @@ import {
   Chip,
 } from "react-native-paper";
 import { LinearGradient } from "expo-linear-gradient";
-import { registerUser } from "../utils/database";
-import { colors, spacing, borderRadius } from "../theme/colors";
+import { registerUser } from "../../database";
+import { colors, spacing, borderRadius } from "../../theme/colors";
 
 export default function RegisterScreen({ navigation }) {
   const [phoneNumber, setPhoneNumber] = useState("");

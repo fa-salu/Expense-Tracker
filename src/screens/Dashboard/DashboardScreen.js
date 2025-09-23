@@ -18,16 +18,16 @@ import {
   Chip,
 } from "react-native-paper";
 import { useFocusEffect } from "@react-navigation/native";
-import { useAuth } from "../context/AuthContext";
-import { getTransactions, calculateSummary } from "../utils/database";
-import { TRANSACTION_TYPES } from "../types";
+import { useAuth } from "../../context/AuthContext";
+import { getTransactions, calculateSummary } from "../../database";
+import { TRANSACTION_TYPES } from "../../types";
 import {
   colors,
   spacing,
   borderRadius,
   typography,
   shadows,
-} from "../theme/colors";
+} from "../../theme/colors";
 
 export default function DashboardScreen({ navigation }) {
   const { user: currentUser, signOut } = useAuth();

@@ -18,9 +18,9 @@ import {
   Surface,
 } from "react-native-paper";
 import { LinearGradient } from "expo-linear-gradient";
-import { useAuth } from "../context/AuthContext";
-import { loginUser } from "../utils/database";
-import { colors, spacing, borderRadius } from "../theme/colors";
+import { useAuth } from "../../context/AuthContext";
+import { loginUser } from "../../database";
+import { colors, spacing, borderRadius } from "../../theme/colors";
 
 export default function LoginScreen({ navigation }) {
   const [phoneNumber, setPhoneNumber] = useState("");

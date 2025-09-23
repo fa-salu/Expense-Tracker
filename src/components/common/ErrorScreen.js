@@ -11,7 +11,7 @@ export default function ErrorScreen({ error }) {
     setLoading(true);
     setError(null);
     try {
-      const { initDatabase } = require("../../utils/database");
+      const { initDatabase } = require("../../database/database");
       await initDatabase();
       setLoading(false);
     } catch (err) {

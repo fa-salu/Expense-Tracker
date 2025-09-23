@@ -18,20 +18,20 @@ import {
   Button,
 } from "react-native-paper";
 import { useFocusEffect } from "@react-navigation/native";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 import {
   getTransactions,
   deleteTransaction,
   calculateSummary,
-} from "../utils/database";
-import { TRANSACTION_TYPES } from "../types";
+} from "../../database";
+import { TRANSACTION_TYPES } from "../../types";
 import {
   colors,
   spacing,
   borderRadius,
   typography,
   shadows,
-} from "../theme/colors";
+} from "../../theme/colors";
 
 export default function TransactionListScreen({ navigation }) {
   const { user: currentUser } = useAuth();

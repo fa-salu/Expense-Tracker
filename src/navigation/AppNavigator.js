@@ -1,9 +1,9 @@
 import React from "react";
 import { createStackNavigator } from "@react-navigation/stack";
 import { colors } from "../theme/colors";
-import DashboardScreen from "../screens/DashboardScreen";
-import AddTransactionScreen from "../screens/AddTransactionScreen";
-import TransactionListScreen from "../screens/TransactionListScreen";
+import DashboardScreen from "../screens/Dashboard/DashboardScreen";
+import AddTransactionScreen from "../screens/Transaction/AddTransactionScreen";
+import TransactionListScreen from "../screens/Transaction/TransactionListScreen";
 
 const AppStack = createStackNavigator();
 

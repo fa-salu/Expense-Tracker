@@ -1,11 +1,6 @@
-// src/components/common/ErrorHandler.js
 import React, { createContext, useContext, useState } from "react";
 import { Alert } from "react-native";
-import {
-  DatabaseError,
-  ConnectionError,
-  QueryError,
-} from "../../utils/database";
+import { ConnectionError, DatabaseError, QueryError } from "../../database";
 
 const ErrorContext = createContext();
 
@@ -36,7 +31,6 @@ export const ErrorProvider = ({ children }) => {
       ]);
     }
 
-    // Auto-clear error after 5 seconds
     setTimeout(() => setError(null), 5000);
   };
 

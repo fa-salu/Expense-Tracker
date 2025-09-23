@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect } from "react";
 import * as SecureStore from "expo-secure-store";
-import { initDatabase, getUserById } from "../utils/database";
+import { initDatabase, getUserById } from "../database";
 
 const AuthContext = createContext();
 const USER_KEY = "expense_tracker_user";
