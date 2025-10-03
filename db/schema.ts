@@ -9,5 +9,36 @@ export const users = sqliteTable("users", {
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
 
+export const categories = sqliteTable("categories", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  name: text("name").notNull(),
+  icon: text("icon").notNull(),
+  color: text("color").notNull(),
+  type: text("type").notNull(), // 'income' or 'expense'
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id),
+  createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const transactions = sqliteTable("transactions", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  amount: text("amount").notNull(), // Store as text to avoid float precision issues
+  description: text("description").notNull(),
+  type: text("type").notNull(), // 'income' or 'expense'
+  categoryId: integer("category_id")
+    .notNull()
+    .references(() => categories.id),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id),
+  date: text("date").notNull(),
+  createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+});
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
+export type Category = typeof categories.$inferSelect;
+export type NewCategory = typeof categories.$inferInsert;
+export type Transaction = typeof transactions.$inferSelect;
+export type NewTransaction = typeof transactions.$inferInsert;

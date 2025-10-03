@@ -9,29 +9,29 @@ import { initializeDatabase } from "@/db/client";
 
 function AppContent() {
   const { user, loading } = useAuth();
-  const [dbReady, setDbReady] = useState(false);
+  // const [dbReady, setDbReady] = useState(false);
 
-  useEffect(() => {
-    async function initializeApp() {
-      try {
-        await initializeDatabase();
-        setDbReady(true);
-        console.log("✅ App initialized successfully");
-      } catch (error) {
-        console.error("❌ Failed to initialize app:", error);
-      }
-    }
+  // useEffect(() => {
+  //   async function initializeApp() {
+  //     try {
+  //       await initializeDatabase();
+  //       setDbReady(true);
+  //       console.log("✅ App initialized successfully");
+  //     } catch (error) {
+  //       console.error("❌ Failed to initialize app:", error);
+  //     }
+  //   }
 
-    initializeApp();
-  }, []);
+  //   initializeApp();
+  // }, []);
 
-  if (loading || !dbReady) {
-    return (
-      <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>Loading...</Text>
-      </View>
-    );
-  }
+  // if (loading || !dbReady) {
+  //   return (
+  //     <View style={styles.loadingContainer}>
+  //       <Text style={styles.loadingText}>Loading...</Text>
+  //     </View>
+  //   );
+  // }
 
   return (
     <NavigationContainer>
