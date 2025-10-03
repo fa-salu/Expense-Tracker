@@ -42,16 +42,21 @@ export const TransactionModal: React.FC<Props> = ({
 
   const isEdit = !!transactionId;
 
+  // Load categories when visible, type changes, or transactionId changes
   useEffect(() => {
     if (visible) {
       loadCategories();
-      if (isEdit) {
-        loadTransaction();
-      } else {
-        resetForm();
-      }
     }
-  }, [visible, type, transactionId]);
+  }, [visible, type]); // Removed transactionId from dependencies
+
+  // Load transaction data separately when editing
+  useEffect(() => {
+    if (visible && isEdit) {
+      loadTransaction();
+    } else if (visible && !isEdit) {
+      resetForm();
+    }
+  }, [visible, transactionId]);
 
   const resetForm = () => {
     setAmount("");
@@ -67,8 +72,21 @@ export const TransactionModal: React.FC<Props> = ({
       if (user) {
         const cats = await CategoryService.getByType(user.id, type);
         setCategories(cats);
-        if (cats.length > 0 && !categoryId) {
-          setCategoryId(cats[0].id);
+
+        // Reset categoryId when type changes and set first category as default
+        if (cats.length > 0) {
+          // Only set the first category if we're not editing or if categoryId is null
+          if (!isEdit || categoryId === null) {
+            setCategoryId(cats[0].id);
+          } else {
+            // Check if current categoryId exists in new categories
+            const categoryExists = cats.find((cat) => cat.id === categoryId);
+            if (!categoryExists) {
+              setCategoryId(cats[0].id);
+            }
+          }
+        } else {
+          setCategoryId(null);
         }
       }
     } catch (error) {
@@ -89,6 +107,12 @@ export const TransactionModal: React.FC<Props> = ({
     } catch (error) {
       Alert.alert("Error", "Failed to load transaction");
     }
+  };
+
+  // Handle type change - this ensures categories are reloaded and categoryId is reset
+  const handleTypeChange = (newType: "income" | "expense") => {
+    setType(newType);
+    setCategoryId(null); // Reset categoryId when type changes
   };
 
   const handleSubmit = async () => {
@@ -161,7 +185,7 @@ export const TransactionModal: React.FC<Props> = ({
                     styles.typeButton,
                     type === "expense" && styles.activeType,
                   ]}
-                  onPress={() => setType("expense")}
+                  onPress={() => handleTypeChange("expense")}
                 >
                   <Text
                     style={[
@@ -177,7 +201,7 @@ export const TransactionModal: React.FC<Props> = ({
                     styles.typeButton,
                     type === "income" && styles.activeType,
                   ]}
-                  onPress={() => setType("income")}
+                  onPress={() => handleTypeChange("income")}
                 >
                   <Text
                     style={[
@@ -215,23 +239,50 @@ export const TransactionModal: React.FC<Props> = ({
 
             <View style={styles.field}>
               <Text style={styles.label}>Category</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <View style={styles.categoryContainer}>
-                  {categories.map((cat) => (
-                    <TouchableOpacity
-                      key={cat.id}
-                      style={[
-                        styles.categoryButton,
-                        categoryId === cat.id && styles.selectedCategory,
-                      ]}
-                      onPress={() => setCategoryId(cat.id)}
-                    >
-                      <Text style={styles.categoryIcon}>{cat.icon}</Text>
-                      <Text style={styles.categoryName}>{cat.name}</Text>
-                    </TouchableOpacity>
-                  ))}
+              {categories.length > 0 ? (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  <View style={styles.categoryContainer}>
+                    {categories.map((cat) => (
+                      <TouchableOpacity
+                        key={cat.id}
+                        style={[
+                          styles.categoryButton,
+                          categoryId === cat.id && styles.selectedCategory,
+                        ]}
+                        onPress={() => setCategoryId(cat.id)}
+                      >
+                        <Text
+                          style={[
+                            styles.categoryIcon,
+                            categoryId === cat.id &&
+                              styles.selectedCategoryIcon,
+                          ]}
+                        >
+                          {cat.icon}
+                        </Text>
+                        <Text
+                          style={[
+                            styles.categoryName,
+                            categoryId === cat.id &&
+                              styles.selectedCategoryName,
+                          ]}
+                        >
+                          {cat.name}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </ScrollView>
+              ) : (
+                <View style={styles.noCategoriesContainer}>
+                  <Text style={styles.noCategoriesText}>
+                    No {type} categories available
+                  </Text>
+                  <Text style={styles.noCategoriesSubtext}>
+                    Please create a category first
+                  </Text>
                 </View>
-              </ScrollView>
+              )}
             </View>
 
             <View style={styles.field}>
@@ -260,9 +311,12 @@ export const TransactionModal: React.FC<Props> = ({
               <Text style={styles.cancelText}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.saveButton, loading && styles.disabledButton]}
+              style={[
+                styles.saveButton,
+                (loading || !categoryId) && styles.disabledButton,
+              ]}
               onPress={handleSubmit}
-              disabled={loading}
+              disabled={loading || !categoryId}
             >
               <Text style={styles.saveText}>
                 {loading ? "Saving..." : isEdit ? "Update" : "Create"}
@@ -368,9 +422,32 @@ const styles = StyleSheet.create({
     fontSize: 24,
     marginBottom: 4,
   },
+  selectedCategoryIcon: {
+    // Icon styles when selected (if needed)
+  },
   categoryName: {
     fontSize: 12,
     textAlign: "center",
+    color: "#333",
+  },
+  selectedCategoryName: {
+    color: "white",
+    fontWeight: "600",
+  },
+  noCategoriesContainer: {
+    alignItems: "center",
+    padding: 20,
+    backgroundColor: "#f9f9f9",
+    borderRadius: 8,
+  },
+  noCategoriesText: {
+    fontSize: 16,
+    color: "#666",
+    marginBottom: 4,
+  },
+  noCategoriesSubtext: {
+    fontSize: 14,
+    color: "#999",
   },
   dateButton: {
     borderWidth: 1,

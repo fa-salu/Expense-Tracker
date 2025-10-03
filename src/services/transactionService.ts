@@ -5,7 +5,7 @@ import {
   type Transaction,
   type NewTransaction,
 } from "@/db/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 
 export interface TransactionWithCategory extends Transaction {
   categoryName: string;
