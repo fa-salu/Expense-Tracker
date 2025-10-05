@@ -4,16 +4,15 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  FlatList,
-  Alert,
+  ScrollView,
 } from "react-native";
 import { CategoryService } from "@/services/categoryService";
 import {
   TransactionService,
   type TransactionWithCategory,
 } from "@/services/transactionService";
-import { CategoryModal } from "@/components/CategoryModal";
-import { TransactionModal } from "@/components/TransactionModal";
+import { TransactionsPage } from "./TransactionPage";
+import { CategoriesPage } from "./CategoryPage";
 import type { Category } from "@/db/schema";
 
 interface DashboardProps {
@@ -32,15 +31,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ userId }) => {
     monthlyIncome: 0,
     monthlyExpense: 0,
   });
-  const [activeView, setActiveView] = useState<"transactions" | "categories">(
-    "transactions"
-  );
-
-  // Modal states
-  const [showCategoryModal, setShowCategoryModal] = useState(false);
-  const [showTransactionModal, setShowTransactionModal] = useState(false);
-  const [editingCategoryId, setEditingCategoryId] = useState<number>();
-  const [editingTransactionId, setEditingTransactionId] = useState<number>();
+  const [activeView, setActiveView] = useState<
+    "dashboard" | "transactions" | "categories"
+  >("dashboard");
 
   useEffect(() => {
     loadData();
@@ -102,283 +95,244 @@ export const Dashboard: React.FC<DashboardProps> = ({ userId }) => {
     });
   };
 
-  const handleDeleteTransaction = (id: number) => {
-    Alert.alert(
-      "Delete Transaction",
-      "Are you sure you want to delete this transaction?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await TransactionService.delete(id);
-              loadData();
-            } catch (error) {
-              Alert.alert("Error", "Failed to delete transaction");
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const handleDeleteCategory = (id: number) => {
-    Alert.alert(
-      "Delete Category",
-      "Are you sure you want to delete this category?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await CategoryService.delete(id);
-              loadData();
-            } catch (error) {
-              Alert.alert("Error", "Failed to delete category");
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const renderTransaction = ({ item }: { item: TransactionWithCategory }) => (
-    <View style={styles.listItem}>
-      <View style={styles.itemLeft}>
-        <Text style={styles.itemIcon}>{item.categoryIcon}</Text>
-        <View style={styles.itemInfo}>
-          <Text style={styles.itemTitle}>{item.description}</Text>
-          <Text style={styles.itemSubtitle}>{item.categoryName}</Text>
-          <Text style={styles.itemDate}>{item.date}</Text>
-        </View>
-      </View>
-      <View style={styles.itemRight}>
-        <Text
-          style={[
-            styles.itemAmount,
-            { color: item.type === "income" ? "#4CAF50" : "#F44336" },
-          ]}
-        >
-          {item.type === "income" ? "+" : "-"}${item.amount}
-        </Text>
-        <View style={styles.itemActions}>
-          <TouchableOpacity
-            onPress={() => {
-              setEditingTransactionId(item.id);
-              setShowTransactionModal(true);
-            }}
-            style={styles.editAction}
-          >
-            <Text style={styles.editText}>Edit</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => handleDeleteTransaction(item.id)}
-            style={styles.deleteAction}
-          >
-            <Text style={styles.deleteText}>×</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </View>
-  );
-
-  const renderCategory = ({ item }: { item: Category }) => (
-    <View style={styles.listItem}>
-      <View style={styles.itemLeft}>
-        <Text style={styles.itemIcon}>{item.icon}</Text>
-        <View style={styles.itemInfo}>
-          <Text style={styles.itemTitle}>{item.name}</Text>
-          <Text style={styles.itemSubtitle}>{item.type}</Text>
-        </View>
-        <View style={[styles.colorDot, { backgroundColor: item.color }]} />
-      </View>
-      <View style={styles.itemActions}>
-        <TouchableOpacity
-          onPress={() => {
-            setEditingCategoryId(item.id);
-            setShowCategoryModal(true);
-          }}
-          style={styles.editAction}
-        >
-          <Text style={styles.editText}>Edit</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => handleDeleteCategory(item.id)}
-          style={styles.deleteAction}
-        >
-          <Text style={styles.deleteText}>×</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-
-  const renderTransactionsList = () => (
-    <FlatList<TransactionWithCategory>
-      data={transactions}
-      renderItem={renderTransaction}
-      keyExtractor={(item) => item.id.toString()}
+  const renderDashboard = () => (
+    <ScrollView
+      style={styles.dashboardContent}
       showsVerticalScrollIndicator={false}
-      ListEmptyComponent={
-        <Text style={styles.emptyText}>No transactions found</Text>
-      }
-    />
-  );
-
-  const renderCategoriesList = () => (
-    <FlatList<Category>
-      data={categories}
-      renderItem={renderCategory}
-      keyExtractor={(item) => item.id.toString()}
-      showsVerticalScrollIndicator={false}
-      ListEmptyComponent={
-        <Text style={styles.emptyText}>No categories found</Text>
-      }
-    />
-  );
-
-  return (
-    <View style={styles.container}>
-      {/* Stats Cards */}
+    >
       <View style={styles.statsSection}>
         <View style={styles.statsRow}>
-          <View style={styles.statCard}>
+          <View style={[styles.statCard, styles.balanceCard]}>
             <Text style={styles.statTitle}>Total Balance</Text>
             <Text
               style={[
                 styles.statAmount,
-                { color: stats.totalBalance >= 0 ? "#4CAF50" : "#F44336" },
+                { color: stats.totalBalance >= 0 ? "#10B981" : "#EF4444" },
               ]}
             >
               ${stats.totalBalance.toFixed(2)}
             </Text>
           </View>
-
-          <View style={styles.statCard}>
-            <Text style={styles.statTitle}>Total Income</Text>
-            <Text style={[styles.statAmount, { color: "#4CAF50" }]}>
-              ${stats.totalIncome.toFixed(2)}
-            </Text>
-          </View>
         </View>
 
         <View style={styles.statsRow}>
-          <View style={styles.statCard}>
-            <Text style={styles.statTitle}>Total Expense</Text>
-            <Text style={[styles.statAmount, { color: "#F44336" }]}>
-              ${stats.totalExpense.toFixed(2)}
+          <View style={[styles.statCard, styles.incomeCard]}>
+            <Text style={styles.statTitle}>Income</Text>
+            <Text style={[styles.statAmount, { color: "#10B981" }]}>
+              ${stats.totalIncome.toFixed(2)}
+            </Text>
+            <Text style={styles.statSubtitle}>
+              ${stats.monthlyIncome.toFixed(2)} this month
             </Text>
           </View>
 
-          <View style={styles.statCard}>
-            <Text style={styles.statTitle}>This Month</Text>
-            <Text
-              style={[
-                styles.statAmount,
-                {
-                  color:
-                    stats.monthlyIncome - stats.monthlyExpense >= 0
-                      ? "#4CAF50"
-                      : "#F44336",
-                },
-              ]}
-            >
-              ${(stats.monthlyIncome - stats.monthlyExpense).toFixed(2)}
+          <View style={[styles.statCard, styles.expenseCard]}>
+            <Text style={styles.statTitle}>Expenses</Text>
+            <Text style={[styles.statAmount, { color: "#EF4444" }]}>
+              ${stats.totalExpense.toFixed(2)}
+            </Text>
+            <Text style={styles.statSubtitle}>
+              ${stats.monthlyExpense.toFixed(2)} this month
             </Text>
           </View>
         </View>
       </View>
 
-      {/* Bottom Navigation */}
-      <View style={styles.bottomNavigation}>
+      <View style={styles.quickActions}>
+        <Text style={styles.sectionTitle}>Quick Actions</Text>
+
         <TouchableOpacity
-          style={[
-            styles.navButton,
-            activeView === "transactions" && styles.activeNavButton,
-          ]}
+          style={styles.actionCard}
           onPress={() => setActiveView("transactions")}
         >
-          <Text
-            style={[
-              styles.navButtonText,
-              activeView === "transactions" && styles.activeNavButtonText,
-            ]}
-          >
-            Transactions
-          </Text>
+          <View style={styles.actionLeft}>
+            <View style={[styles.actionIcon, { backgroundColor: "#DBEAFE" }]}>
+              <Text style={styles.actionEmoji}>💰</Text>
+            </View>
+            <View style={styles.actionInfo}>
+              <Text style={styles.actionTitle}>Transactions</Text>
+              <Text style={styles.actionSubtitle}>
+                {transactions.length} transaction
+                {transactions.length !== 1 ? "s" : ""}
+              </Text>
+            </View>
+          </View>
+          <Text style={styles.actionArrow}>→</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[
-            styles.navButton,
-            activeView === "categories" && styles.activeNavButton,
-          ]}
+          style={styles.actionCard}
           onPress={() => setActiveView("categories")}
         >
-          <Text
-            style={[
-              styles.navButtonText,
-              activeView === "categories" && styles.activeNavButtonText,
-            ]}
-          >
-            Categories
-          </Text>
+          <View style={styles.actionLeft}>
+            <View style={[styles.actionIcon, { backgroundColor: "#F3E8FF" }]}>
+              <Text style={styles.actionEmoji}>📊</Text>
+            </View>
+            <View style={styles.actionInfo}>
+              <Text style={styles.actionTitle}>Categories</Text>
+              <Text style={styles.actionSubtitle}>
+                {categories.length} categor
+                {categories.length !== 1 ? "ies" : "y"}
+              </Text>
+            </View>
+          </View>
+          <Text style={styles.actionArrow}>→</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Content Area */}
-      <View style={styles.contentArea}>
+      <View style={styles.recentSection}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>
-            {activeView === "transactions"
-              ? "Recent Transactions"
-              : "All Categories"}
-          </Text>
-          <TouchableOpacity
-            onPress={() => {
-              if (activeView === "transactions") {
-                setEditingTransactionId(undefined);
-                setShowTransactionModal(true);
-              } else {
-                setEditingCategoryId(undefined);
-                setShowCategoryModal(true);
-              }
-            }}
-            style={styles.addButton}
-          >
-            <Text style={styles.addButtonText}>+ Add</Text>
+          <Text style={styles.sectionTitle}>Recent Transactions</Text>
+          <TouchableOpacity onPress={() => setActiveView("transactions")}>
+            <Text style={styles.viewAllText}>View All</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Conditional FlatList Rendering */}
-        {activeView === "transactions"
-          ? renderTransactionsList()
-          : renderCategoriesList()}
+        {transactions.slice(0, 3).length > 0 ? (
+          transactions.slice(0, 3).map((transaction) => (
+            <View key={transaction.id} style={styles.previewItem}>
+              <View style={styles.previewLeft}>
+                <View style={styles.previewIconContainer}>
+                  <Text style={styles.previewIcon}>
+                    {transaction.categoryIcon}
+                  </Text>
+                </View>
+                <View style={styles.previewInfo}>
+                  <Text style={styles.previewTitle}>
+                    {transaction.description}
+                  </Text>
+                  <Text style={styles.previewSubtitle}>
+                    {transaction.categoryName}
+                  </Text>
+                </View>
+              </View>
+              <Text
+                style={[
+                  styles.previewAmount,
+                  {
+                    color:
+                      transaction.type === "income" ? "#10B981" : "#EF4444",
+                  },
+                ]}
+              >
+                {transaction.type === "income" ? "+" : "-"}$
+                {parseFloat(transaction.amount).toFixed(2)}
+              </Text>
+            </View>
+          ))
+        ) : (
+          <View style={styles.noTransactions}>
+            <Text style={styles.noTransactionsText}>No transactions yet</Text>
+            <Text style={styles.noTransactionsSubtext}>
+              Start by adding your first transaction
+            </Text>
+          </View>
+        )}
+      </View>
+    </ScrollView>
+  );
+
+  const renderBottomNavigation = () => (
+    <View style={styles.bottomNavigation}>
+      <TouchableOpacity
+        style={[
+          styles.navButton,
+          activeView === "dashboard" && styles.activeNavButton,
+        ]}
+        onPress={() => setActiveView("dashboard")}
+      >
+        <Text
+          style={[
+            styles.navIcon,
+            activeView === "dashboard" && styles.activeNavIcon,
+          ]}
+        >
+          🏠
+        </Text>
+        <Text
+          style={[
+            styles.navButtonText,
+            activeView === "dashboard" && styles.activeNavButtonText,
+          ]}
+        >
+          Dashboard
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[
+          styles.navButton,
+          activeView === "transactions" && styles.activeNavButton,
+        ]}
+        onPress={() => setActiveView("transactions")}
+      >
+        <Text
+          style={[
+            styles.navIcon,
+            activeView === "transactions" && styles.activeNavIcon,
+          ]}
+        >
+          💰
+        </Text>
+        <Text
+          style={[
+            styles.navButtonText,
+            activeView === "transactions" && styles.activeNavButtonText,
+          ]}
+        >
+          Transactions
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[
+          styles.navButton,
+          activeView === "categories" && styles.activeNavButton,
+        ]}
+        onPress={() => setActiveView("categories")}
+      >
+        <Text
+          style={[
+            styles.navIcon,
+            activeView === "categories" && styles.activeNavIcon,
+          ]}
+        >
+          📊
+        </Text>
+        <Text
+          style={[
+            styles.navButtonText,
+            activeView === "categories" && styles.activeNavButtonText,
+          ]}
+        >
+          Categories
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.content}>
+        {activeView === "dashboard" && renderDashboard()}
+        {activeView === "transactions" && (
+          <TransactionsPage
+            userId={userId}
+            transactions={transactions}
+            categories={categories}
+            onDataChange={loadData}
+          />
+        )}
+        {activeView === "categories" && (
+          <CategoriesPage
+            userId={userId}
+            categories={categories}
+            onDataChange={loadData}
+          />
+        )}
       </View>
 
-      {/* Modals */}
-      <CategoryModal
-        visible={showCategoryModal}
-        onClose={() => {
-          setShowCategoryModal(false);
-          setEditingCategoryId(undefined);
-        }}
-        onSuccess={loadData}
-        categoryId={editingCategoryId}
-      />
-
-      <TransactionModal
-        visible={showTransactionModal}
-        onClose={() => {
-          setShowTransactionModal(false);
-          setEditingTransactionId(undefined);
-        }}
-        onSuccess={loadData}
-        transactionId={editingTransactionId}
-      />
+      {renderBottomNavigation()}
     </View>
   );
 };
@@ -386,66 +340,126 @@ export const Dashboard: React.FC<DashboardProps> = ({ userId }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#F8FAFC",
   },
+
+  content: {
+    flex: 1,
+  },
+  dashboardContent: {
+    flex: 1,
+  },
+
   statsSection: {
-    padding: 16,
-    backgroundColor: "white",
-    marginBottom: 8,
+    padding: 20,
   },
   statsRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    gap: 12,
     marginBottom: 12,
   },
   statCard: {
-    backgroundColor: "#f8f9fa",
-    padding: 16,
-    borderRadius: 8,
-    flex: 0.48,
-    alignItems: "center",
+    flex: 1,
+    backgroundColor: "white",
+    padding: 20,
+    borderRadius: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  balanceCard: {
+    borderLeftWidth: 4,
+    borderLeftColor: "#3B82F6",
+  },
+  incomeCard: {
+    borderLeftWidth: 4,
+    borderLeftColor: "#10B981",
+  },
+  expenseCard: {
+    borderLeftWidth: 4,
+    borderLeftColor: "#EF4444",
   },
   statTitle: {
-    fontSize: 12,
-    color: "#666",
-    marginBottom: 4,
-    textAlign: "center",
-  },
-  statAmount: {
-    fontSize: 16,
-    fontWeight: "bold",
-    textAlign: "center",
-  },
-  bottomNavigation: {
-    flexDirection: "row",
-    backgroundColor: "white",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-  },
-  navButton: {
-    flex: 1,
-    paddingVertical: 12,
-    alignItems: "center",
-    borderRadius: 8,
-    marginHorizontal: 4,
-  },
-  activeNavButton: {
-    backgroundColor: "#007AFF",
-  },
-  navButtonText: {
     fontSize: 14,
-    color: "#666",
+    color: "#64748B",
+    marginBottom: 8,
     fontWeight: "500",
   },
-  activeNavButtonText: {
-    color: "white",
+  statAmount: {
+    fontSize: 20,
+    fontWeight: "700",
+    marginBottom: 4,
+  },
+  statSubtitle: {
+    fontSize: 12,
+    color: "#94A3B8",
+    fontWeight: "500",
+  },
+
+  quickActions: {
+    paddingHorizontal: 20,
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#0F172A",
+    marginBottom: 16,
+  },
+  actionCard: {
+    backgroundColor: "white",
+    padding: 16,
+    borderRadius: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  actionLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  actionIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  actionEmoji: {
+    fontSize: 20,
+  },
+  actionInfo: {
+    flex: 1,
+  },
+  actionTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#0F172A",
+    marginBottom: 2,
+  },
+  actionSubtitle: {
+    fontSize: 14,
+    color: "#64748B",
+  },
+  actionArrow: {
+    fontSize: 18,
+    color: "#3B82F6",
     fontWeight: "600",
   },
-  contentArea: {
-    flex: 1,
-    padding: 16,
+
+  recentSection: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
   },
   sectionHeader: {
     flexDirection: "row",
@@ -453,103 +467,114 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 16,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#333",
-  },
-  addButton: {
-    backgroundColor: "#007AFF",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 6,
-  },
-  addButtonText: {
-    color: "white",
+  viewAllText: {
+    color: "#3B82F6",
     fontSize: 14,
     fontWeight: "600",
   },
-  listItem: {
+  previewItem: {
     backgroundColor: "white",
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
+    justifyContent: "space-between",
     padding: 16,
+    borderRadius: 12,
     marginBottom: 8,
-    borderRadius: 8,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
     elevation: 2,
   },
-  itemLeft: {
+  previewLeft: {
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
   },
-  itemIcon: {
-    fontSize: 24,
+  previewIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#F8FAFC",
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: 12,
   },
-  itemInfo: {
+  previewIcon: {
+    fontSize: 18,
+  },
+  previewInfo: {
     flex: 1,
   },
-  itemTitle: {
+  previewTitle: {
+    fontSize: 15,
+    fontWeight: "500",
+    color: "#0F172A",
+    marginBottom: 2,
+  },
+  previewSubtitle: {
+    fontSize: 13,
+    color: "#64748B",
+  },
+  previewAmount: {
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  noTransactions: {
+    backgroundColor: "white",
+    padding: 24,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  noTransactionsText: {
     fontSize: 16,
     fontWeight: "500",
-    color: "#333",
-  },
-  itemSubtitle: {
-    fontSize: 14,
-    color: "#666",
-    marginTop: 2,
-  },
-  itemDate: {
-    fontSize: 12,
-    color: "#999",
-    marginTop: 2,
-  },
-  itemRight: {
-    alignItems: "flex-end",
-  },
-  itemAmount: {
-    fontSize: 16,
-    fontWeight: "600",
+    color: "#64748B",
     marginBottom: 4,
   },
-  itemActions: {
+  noTransactionsSubtext: {
+    fontSize: 14,
+    color: "#94A3B8",
+  },
+
+  // Bottom Navigation
+  bottomNavigation: {
     flexDirection: "row",
-    gap: 8,
+    backgroundColor: "white",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderTopWidth: 1,
+    borderTopColor: "#F1F5F9",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 8,
   },
-  editAction: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+  navButton: {
+    flex: 1,
+    alignItems: "center",
+    paddingVertical: 8,
+    borderRadius: 12,
+    marginHorizontal: 2,
   },
-  editText: {
-    color: "#007AFF",
+  activeNavButton: {
+    backgroundColor: "#EFF6FF",
+  },
+  navIcon: {
+    fontSize: 20,
+    marginBottom: 4,
+  },
+  activeNavIcon: {
+    transform: [{ scale: 1.1 }],
+  },
+  navButtonText: {
     fontSize: 12,
+    color: "#64748B",
+    fontWeight: "500",
   },
-  deleteAction: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  deleteText: {
-    color: "#F44336",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  colorDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginLeft: "auto",
-    marginRight: 12,
-  },
-  emptyText: {
-    textAlign: "center",
-    color: "#666",
-    fontSize: 16,
-    marginTop: 40,
+  activeNavButtonText: {
+    color: "#3B82F6",
+    fontWeight: "600",
   },
 });
