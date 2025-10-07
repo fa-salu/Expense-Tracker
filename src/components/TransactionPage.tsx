@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -10,26 +10,47 @@ import {
 import {
   TransactionService,
   type TransactionWithCategory,
+  type TransactionFilters,
 } from "@/services/transactionService";
 import { TransactionModal } from "@/components/TransactionModal";
+import { TransactionFilterBottomSheet } from "@/components/TransactionFilter";
+import { FilterButton } from "@/components/FilterButton";
 import type { Category } from "@/db/schema";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 interface TransactionsPageProps {
   userId: number;
-  transactions: TransactionWithCategory[];
   categories: Category[];
   onDataChange: () => void;
 }
 
 export const TransactionsPage: React.FC<TransactionsPageProps> = ({
   userId,
-  transactions,
   categories,
   onDataChange,
 }) => {
   const [showTransactionModal, setShowTransactionModal] = useState(false);
+  const [showFilterBottomSheet, setShowFilterBottomSheet] = useState(false);
   const [editingTransactionId, setEditingTransactionId] = useState<number>();
+  const [transactions, setTransactions] = useState<TransactionWithCategory[]>(
+    []
+  );
+  const [currentFilters, setCurrentFilters] = useState<TransactionFilters>({
+    type: "all",
+  });
+
+  const loadTransactions = async (filters?: TransactionFilters) => {
+    try {
+      const data = await TransactionService.getByUserId(userId, filters);
+      setTransactions(data);
+    } catch (error) {
+      console.error("Failed to load transactions:", error);
+    }
+  };
+
+  useEffect(() => {
+    loadTransactions(currentFilters);
+  }, [userId]);
 
   const handleDeleteTransaction = (id: number) => {
     Alert.alert(
@@ -43,6 +64,7 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
           onPress: async () => {
             try {
               await TransactionService.delete(id);
+              await loadTransactions(currentFilters);
               onDataChange();
             } catch (error) {
               Alert.alert("Error", "Failed to delete transaction");
@@ -51,6 +73,11 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
         },
       ]
     );
+  };
+
+  const handleApplyFilters = async (filters: TransactionFilters) => {
+    setCurrentFilters(filters);
+    await loadTransactions(filters);
   };
 
   const renderTransaction = ({ item }: { item: TransactionWithCategory }) => (
@@ -76,10 +103,16 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
             {item.description}
           </Text>
           <View style={styles.itemMeta}>
+            <View
+              style={[
+                styles.categoryDot,
+                { backgroundColor: item.categoryColor },
+              ]}
+            />
             <Text style={styles.itemSubtitle}>{item.categoryName}</Text>
             <Text style={styles.itemDate}>•</Text>
             <Text style={styles.itemDate}>
-              {new Date(item.date).toLocaleDateString()}
+              {new Date(item.date).toLocaleDateString("en-IN")}
             </Text>
           </View>
         </View>
@@ -95,6 +128,20 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
 
   return (
     <SafeAreaView style={styles.container} edges={["left", "right"]}>
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.pageTitle}>Transactions</Text>
+          <Text style={styles.pageSubtitle}>
+            {transactions.length} transaction
+            {transactions.length !== 1 ? "s" : ""}
+          </Text>
+        </View>
+        <FilterButton
+          onPress={() => setShowFilterBottomSheet(true)}
+          filters={currentFilters}
+        />
+      </View>
+
       <View style={styles.content}>
         <FlatList<TransactionWithCategory>
           data={transactions}
@@ -106,9 +153,9 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyIcon}>💰</Text>
-              <Text style={styles.emptyTitle}>No transactions yet</Text>
+              <Text style={styles.emptyTitle}>No transactions found</Text>
               <Text style={styles.emptySubtext}>
-                Start tracking your expenses and income
+                Try adjusting your filters or add new transactions
               </Text>
             </View>
           }
@@ -131,8 +178,19 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
           setShowTransactionModal(false);
           setEditingTransactionId(undefined);
         }}
-        onSuccess={onDataChange}
+        onSuccess={async () => {
+          await loadTransactions(currentFilters);
+          onDataChange();
+        }}
         transactionId={editingTransactionId}
+      />
+
+      <TransactionFilterBottomSheet
+        visible={showFilterBottomSheet}
+        onClose={() => setShowFilterBottomSheet(false)}
+        onApplyFilters={handleApplyFilters}
+        categories={categories}
+        currentFilters={currentFilters}
       />
     </SafeAreaView>
   );
@@ -149,6 +207,9 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderBottomWidth: 1,
     borderBottomColor: "#E2E8F0",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   pageTitle: {
     fontSize: 20,
@@ -210,6 +271,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
+  },
+  categoryDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   itemSubtitle: {
     fontSize: 10,

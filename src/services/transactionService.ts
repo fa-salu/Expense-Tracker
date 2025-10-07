@@ -5,7 +5,14 @@ import {
   type Transaction,
   type NewTransaction,
 } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and, gte, lte, inArray, or } from "drizzle-orm";
+
+export interface TransactionFilters {
+  dateFrom?: string;
+  dateTo?: string;
+  type?: "income" | "expense" | "all";
+  categoryIds?: number[];
+}
 
 export interface TransactionWithCategory extends Transaction {
   categoryName: string;
@@ -13,7 +20,27 @@ export interface TransactionWithCategory extends Transaction {
 }
 
 export class TransactionService {
-  static async getByUserId(userId: number): Promise<TransactionWithCategory[]> {
+  static async getByUserId(
+    userId: number,
+    filters?: TransactionFilters
+  ): Promise<TransactionWithCategory[]> {
+    const conditions: any[] = [eq(transactions.userId, userId)];
+
+    if (filters?.dateFrom) {
+      conditions.push(gte(transactions.date, filters.dateFrom));
+    }
+    if (filters?.dateTo) {
+      conditions.push(lte(transactions.date, filters.dateTo));
+    }
+
+    if (filters?.type && filters.type !== "all") {
+      conditions.push(eq(transactions.type, filters.type));
+    }
+
+    if (filters?.categoryIds && filters.categoryIds.length > 0) {
+      conditions.push(inArray(transactions.categoryId, filters.categoryIds));
+    }
+
     return await db
       .select({
         id: transactions.id,
@@ -29,7 +56,7 @@ export class TransactionService {
       })
       .from(transactions)
       .innerJoin(categories, eq(transactions.categoryId, categories.id))
-      .where(eq(transactions.userId, userId))
+      .where(and(...conditions))
       .orderBy(desc(transactions.date), desc(transactions.createdAt));
   }
 
