@@ -192,11 +192,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ userId }) => {
           transactions.slice(0, 3).map((transaction) => (
             <View key={transaction.id} style={styles.previewItem}>
               <View style={styles.previewLeft}>
-                <View style={styles.previewIconContainer}>
-                  <Text style={styles.previewIcon}>
-                    {transaction.categoryIcon}
-                  </Text>
-                </View>
                 <View style={styles.previewInfo}>
                   <Text style={styles.previewTitle}>
                     {transaction.description}
@@ -491,18 +486,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flex: 1,
   },
-  previewIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#F8FAFC",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-  },
-  previewIcon: {
-    fontSize: 18,
-  },
+
   previewInfo: {
     flex: 1,
   },

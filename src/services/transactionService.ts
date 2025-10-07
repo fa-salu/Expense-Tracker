@@ -9,7 +9,6 @@ import { eq, desc } from "drizzle-orm";
 
 export interface TransactionWithCategory extends Transaction {
   categoryName: string;
-  categoryIcon: string;
   categoryColor: string;
 }
 
@@ -26,7 +25,6 @@ export class TransactionService {
         date: transactions.date,
         createdAt: transactions.createdAt,
         categoryName: categories.name,
-        categoryIcon: categories.icon,
         categoryColor: categories.color,
       })
       .from(transactions)

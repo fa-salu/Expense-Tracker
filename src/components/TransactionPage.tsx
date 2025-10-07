@@ -56,9 +56,6 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
   const renderTransaction = ({ item }: { item: TransactionWithCategory }) => (
     <View style={styles.listItem}>
       <View style={styles.itemLeft}>
-        <View style={styles.iconContainer}>
-          <Text style={styles.itemIcon}>{item.categoryIcon}</Text>
-        </View>
         <View style={styles.itemInfo}>
           <Text style={styles.itemTitle}>{item.description}</Text>
           <Text style={styles.itemSubtitle}>{item.categoryName}</Text>
@@ -248,18 +245,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
-  },
-  iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: "#F8FAFC",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-  },
-  itemIcon: {
-    fontSize: 20,
   },
   itemInfo: {
     flex: 1,

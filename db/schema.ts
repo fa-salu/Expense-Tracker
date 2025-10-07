@@ -12,9 +12,8 @@ export const users = sqliteTable("users", {
 export const categories = sqliteTable("categories", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),
-  icon: text("icon").notNull(),
   color: text("color").notNull(),
-  type: text("type").notNull(), // 'income' or 'expense'
+  type: text("type").notNull(),
   userId: integer("user_id")
     .notNull()
     .references(() => users.id),
@@ -23,9 +22,9 @@ export const categories = sqliteTable("categories", {
 
 export const transactions = sqliteTable("transactions", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  amount: text("amount").notNull(), // Store as text to avoid float precision issues
-  description: text("description").notNull(),
-  type: text("type").notNull(), // 'income' or 'expense'
+  amount: text("amount").notNull(),
+  description: text("description"),
+  type: text("type").notNull(),
   categoryId: integer("category_id")
     .notNull()
     .references(() => categories.id),

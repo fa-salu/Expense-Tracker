@@ -1,5 +1,10 @@
 import { db } from "@/db/client";
-import { categories, type Category, type NewCategory } from "@/db/schema";
+import {
+  categories,
+  transactions,
+  type Category,
+  type NewCategory,
+} from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 
 export class CategoryService {
@@ -40,6 +45,17 @@ export class CategoryService {
   }
 
   static async delete(id: number): Promise<void> {
+    const usedInTransactions = await db
+      .select()
+      .from(transactions)
+      .where(eq(transactions.categoryId, id));
+
+    if (usedInTransactions.length > 0) {
+      throw new Error(
+        "This category cannot be deleted because it is used in transactions."
+      );
+    }
+
     await db.delete(categories).where(eq(categories.id, id));
   }
 

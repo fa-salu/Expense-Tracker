@@ -35,7 +35,6 @@ export const initializeDatabase = async () => {
       CREATE TABLE categories (
         id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
         name TEXT NOT NULL,
-        icon TEXT NOT NULL,
         color TEXT NOT NULL,
         type TEXT NOT NULL,
         user_id INTEGER NOT NULL,
@@ -49,7 +48,7 @@ export const initializeDatabase = async () => {
       CREATE TABLE transactions (
         id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
         amount TEXT NOT NULL,
-        description TEXT NOT NULL,
+        description TEXT,
         type TEXT NOT NULL,
         category_id INTEGER NOT NULL,
         user_id INTEGER NOT NULL,
@@ -88,14 +87,14 @@ export const initializeDatabase = async () => {
 
 const insertDefaultCategories = async () => {
   const defaultCategories = [
-    { name: "Food", icon: "🍽️", color: "#FF6B6B", type: "expense" },
-    { name: "Transport", icon: "🚗", color: "#4ECDC4", type: "expense" },
-    { name: "Shopping", icon: "🛍️", color: "#45B7D1", type: "expense" },
-    { name: "Entertainment", icon: "🎬", color: "#96CEB4", type: "expense" },
-    { name: "Bills", icon: "💡", color: "#FFEAA7", type: "expense" },
-    { name: "Salary", icon: "💰", color: "#00B894", type: "income" },
-    { name: "Business", icon: "💼", color: "#00CEC9", type: "income" },
-    { name: "Investment", icon: "📈", color: "#6C5CE7", type: "income" },
+    { name: "Food", color: "#FF6B6B", type: "expense" },
+    { name: "Transport", color: "#4ECDC4", type: "expense" },
+    { name: "Shopping", color: "#45B7D1", type: "expense" },
+    { name: "Entertainment", color: "#96CEB4", type: "expense" },
+    { name: "Bills", color: "#FFEAA7", type: "expense" },
+    { name: "Salary", color: "#00B894", type: "income" },
+    { name: "Business", color: "#00CEC9", type: "income" },
+    { name: "Investment", color: "#6C5CE7", type: "income" },
   ];
 
   try {
@@ -103,7 +102,7 @@ const insertDefaultCategories = async () => {
       await expo.runAsync(
         `INSERT INTO categories (name, icon, color, type, user_id)
          SELECT ?, ?, ?, ?, users.id FROM users`,
-        [category.name, category.icon, category.color, category.type]
+        [category.name, category.color, category.type]
       );
     }
     console.log("✅ Default categories inserted");

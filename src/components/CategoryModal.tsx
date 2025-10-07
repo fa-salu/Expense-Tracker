@@ -12,7 +12,6 @@ import {
 import { CategoryService } from "@/services/categoryService";
 import { AuthService } from "@/services/auth";
 
-const ICONS = ["🍽️", "🚗", "🛍️", "🎬", "💡", "🏥", "💰", "💼", "📈", "🎁"];
 const COLORS = [
   "#FF6B6B",
   "#4ECDC4",
@@ -39,7 +38,6 @@ export const CategoryModal: React.FC<Props> = ({
 }) => {
   const [name, setName] = useState("");
   const [type, setType] = useState<"income" | "expense">(initialType);
-  const [icon, setIcon] = useState("🍽️");
   const [color, setColor] = useState("#FF6B6B");
   const [loading, setLoading] = useState(false);
 
@@ -58,7 +56,6 @@ export const CategoryModal: React.FC<Props> = ({
   const resetForm = () => {
     setName("");
     setType(initialType);
-    setIcon("🍽️");
     setColor("#FF6B6B");
   };
 
@@ -68,7 +65,6 @@ export const CategoryModal: React.FC<Props> = ({
       if (category) {
         setName(category.name);
         setType(category.type as "income" | "expense");
-        setIcon(category.icon);
         setColor(category.color);
       }
     } catch (error) {
@@ -87,7 +83,7 @@ export const CategoryModal: React.FC<Props> = ({
       const user = await AuthService.getCurrentUser();
       if (!user) throw new Error("User not found");
 
-      const data = { name: name.trim(), type, icon, color, userId: user.id };
+      const data = { name: name.trim(), type, color, userId: user.id };
 
       if (isEdit) {
         await CategoryService.update(categoryId!, data);
@@ -168,24 +164,6 @@ export const CategoryModal: React.FC<Props> = ({
             </View>
 
             <View style={styles.field}>
-              <Text style={styles.label}>Icon</Text>
-              <View style={styles.grid}>
-                {ICONS.map((item) => (
-                  <TouchableOpacity
-                    key={item}
-                    style={[
-                      styles.iconButton,
-                      icon === item && styles.selectedIcon,
-                    ]}
-                    onPress={() => setIcon(item)}
-                  >
-                    <Text style={styles.iconText}>{item}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            <View style={styles.field}>
               <Text style={styles.label}>Color</Text>
               <View style={styles.grid}>
                 {COLORS.map((item) => (
@@ -205,7 +183,6 @@ export const CategoryModal: React.FC<Props> = ({
             <View style={styles.preview}>
               <Text style={styles.label}>Preview</Text>
               <View style={styles.previewItem}>
-                <Text style={styles.previewIcon}>{icon}</Text>
                 <Text style={styles.previewName}>
                   {name || "Category Name"}
                 </Text>
@@ -327,9 +304,6 @@ const styles = StyleSheet.create({
   selectedIcon: {
     backgroundColor: "#007AFF",
   },
-  iconText: {
-    fontSize: 24,
-  },
   colorButton: {
     width: 40,
     height: 40,
@@ -352,10 +326,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 8,
   },
-  previewIcon: {
-    fontSize: 24,
-    marginRight: 12,
-  },
+
   previewName: {
     flex: 1,
     fontSize: 16,

@@ -99,7 +99,7 @@ export const TransactionModal: React.FC<Props> = ({
       const transaction = await TransactionService.getById(transactionId!);
       if (transaction) {
         setAmount(transaction.amount);
-        setDescription(transaction.description);
+        setDescription(transaction.description || "");
         setType(transaction.type as "income" | "expense");
         setCategoryId(transaction.categoryId);
         setDate(new Date(transaction.date));
@@ -116,7 +116,7 @@ export const TransactionModal: React.FC<Props> = ({
   };
 
   const handleSubmit = async () => {
-    if (!amount.trim() || !description.trim() || !categoryId) {
+    if (!amount.trim() || !categoryId) {
       Alert.alert("Error", "Please fill all fields");
       return;
     }
@@ -251,15 +251,6 @@ export const TransactionModal: React.FC<Props> = ({
                         ]}
                         onPress={() => setCategoryId(cat.id)}
                       >
-                        <Text
-                          style={[
-                            styles.categoryIcon,
-                            categoryId === cat.id &&
-                              styles.selectedCategoryIcon,
-                          ]}
-                        >
-                          {cat.icon}
-                        </Text>
                         <Text
                           style={[
                             styles.categoryName,
@@ -417,13 +408,6 @@ const styles = StyleSheet.create({
   },
   selectedCategory: {
     backgroundColor: "#007AFF",
-  },
-  categoryIcon: {
-    fontSize: 24,
-    marginBottom: 4,
-  },
-  selectedCategoryIcon: {
-    // Icon styles when selected (if needed)
   },
   categoryName: {
     fontSize: 12,

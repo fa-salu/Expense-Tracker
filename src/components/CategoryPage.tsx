@@ -40,7 +40,10 @@ export const CategoriesPage: React.FC<CategoriesPageProps> = ({
               await CategoryService.delete(id);
               onDataChange();
             } catch (error) {
-              Alert.alert("Error", "Failed to delete category");
+              Alert.alert(
+                "Error",
+                (error as Error).message || "Failed to delete category"
+              );
             }
           },
         },
@@ -54,11 +57,6 @@ export const CategoriesPage: React.FC<CategoriesPageProps> = ({
   const renderCategory = ({ item }: { item: Category }) => (
     <View style={styles.listItem}>
       <View style={styles.itemLeft}>
-        <View
-          style={[styles.iconContainer, { backgroundColor: `${item.color}20` }]}
-        >
-          <Text style={styles.itemIcon}>{item.icon}</Text>
-        </View>
         <View style={styles.itemInfo}>
           <Text style={styles.itemTitle}>{item.name}</Text>
           <View style={styles.typeContainer}>
@@ -321,17 +319,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flex: 1,
   },
-  iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-  },
-  itemIcon: {
-    fontSize: 20,
-  },
+
   itemInfo: {
     flex: 1,
   },
