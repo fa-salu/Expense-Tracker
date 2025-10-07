@@ -6,11 +6,11 @@ import {
   StyleSheet,
   FlatList,
   Alert,
-  SafeAreaView,
 } from "react-native";
 import { CategoryService } from "@/services/categoryService";
 import { CategoryModal } from "@/components/CategoryModal";
 import type { Category } from "@/db/schema";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 interface CategoriesPageProps {
   userId: number;
@@ -25,6 +25,9 @@ export const CategoriesPage: React.FC<CategoriesPageProps> = ({
 }) => {
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [editingCategoryId, setEditingCategoryId] = useState<number>();
+  const [activeTab, setActiveTab] = useState<"all" | "income" | "expense">(
+    "all"
+  );
 
   const handleDeleteCategory = (id: number) => {
     Alert.alert(
@@ -51,12 +54,25 @@ export const CategoriesPage: React.FC<CategoriesPageProps> = ({
     );
   };
 
+  const filteredCategories = categories.filter((cat) => {
+    if (activeTab === "income") return cat.type === "income";
+    if (activeTab === "expense") return cat.type === "expense";
+    return true;
+  });
+
   const incomeCategories = categories.filter((cat) => cat.type === "income");
   const expenseCategories = categories.filter((cat) => cat.type === "expense");
 
   const renderCategory = ({ item }: { item: Category }) => (
-    <View style={styles.listItem}>
+    <TouchableOpacity
+      style={styles.listItem}
+      onPress={() => {
+        setEditingCategoryId(item.id);
+        setShowCategoryModal(true);
+      }}
+    >
       <View style={styles.itemLeft}>
+        <View style={[styles.colorDot, { backgroundColor: item.color }]} />
         <View style={styles.itemInfo}>
           <Text style={styles.itemTitle}>{item.name}</Text>
           <View style={styles.typeContainer}>
@@ -80,119 +96,97 @@ export const CategoriesPage: React.FC<CategoriesPageProps> = ({
             </View>
           </View>
         </View>
-        <View style={[styles.colorDot, { backgroundColor: item.color }]} />
       </View>
-      <View style={styles.itemActions}>
-        <TouchableOpacity
-          onPress={() => {
-            setEditingCategoryId(item.id);
-            setShowCategoryModal(true);
-          }}
-          style={styles.editAction}
-        >
-          <Text style={styles.editIcon}>✏️</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => handleDeleteCategory(item.id)}
-          style={styles.deleteAction}
-        >
-          <Text style={styles.deleteIcon}>🗑️</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+      <TouchableOpacity
+        onPress={() => handleDeleteCategory(item.id)}
+        style={styles.deleteAction}
+      >
+        <Text style={styles.actionText}>🗑️</Text>
+      </TouchableOpacity>
+    </TouchableOpacity>
   );
 
-  const renderSectionHeader = (title: string, count: number) => (
-    <View style={styles.sectionHeader}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      <View style={styles.countBadge}>
-        <Text style={styles.countText}>{count}</Text>
+  const TabButton = ({
+    title,
+    count,
+    isActive,
+    onPress,
+  }: {
+    title: string;
+    count: number;
+    isActive: boolean;
+    onPress: () => void;
+  }) => (
+    <TouchableOpacity
+      style={[styles.tabButton, isActive && styles.activeTabButton]}
+      onPress={onPress}
+    >
+      <Text style={[styles.tabText, isActive && styles.activeTabText]}>
+        {title}
+      </Text>
+      <View style={[styles.tabCount, isActive && styles.activeTabCount]}>
+        <Text
+          style={[styles.tabCountText, isActive && styles.activeTabCountText]}
+        >
+          {count}
+        </Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <Text style={styles.pageTitle}>Categories</Text>
-          <Text style={styles.pageSubtitle}>
-            {categories.length} categor{categories.length !== 1 ? "ies" : "y"}
-          </Text>
-        </View>
-        <TouchableOpacity
-          onPress={() => {
-            setEditingCategoryId(undefined);
-            setShowCategoryModal(true);
-          }}
-          style={styles.addButton}
-        >
-          <Text style={styles.addButtonIcon}>+</Text>
-          <Text style={styles.addButtonText}>Add</Text>
-        </TouchableOpacity>
+    <SafeAreaView style={styles.container} edges={["left", "right"]}>
+      <View style={styles.tabContainer}>
+        <TabButton
+          title="All"
+          count={categories.length}
+          isActive={activeTab === "all"}
+          onPress={() => setActiveTab("all")}
+        />
+        <TabButton
+          title="Income"
+          count={incomeCategories.length}
+          isActive={activeTab === "income"}
+          onPress={() => setActiveTab("income")}
+        />
+        <TabButton
+          title="Expense"
+          count={expenseCategories.length}
+          isActive={activeTab === "expense"}
+          onPress={() => setActiveTab("expense")}
+        />
       </View>
 
       <View style={styles.content}>
-        {categories.length === 0 ? (
+        {filteredCategories.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyIcon}>📊</Text>
             <Text style={styles.emptyTitle}>No categories yet</Text>
             <Text style={styles.emptySubtext}>
-              Create categories to organize your transactions and better track
-              your spending habits
+              Create categories to organize your transactions
             </Text>
-            <TouchableOpacity
-              style={styles.emptyButton}
-              onPress={() => {
-                setEditingCategoryId(undefined);
-                setShowCategoryModal(true);
-              }}
-            >
-              <Text style={styles.emptyButtonText}>Create Category</Text>
-            </TouchableOpacity>
           </View>
         ) : (
           <FlatList
-            data={[
-              {
-                type: "section",
-                title: "Income Categories",
-                data: incomeCategories,
-              },
-              {
-                type: "section",
-                title: "Expense Categories",
-                data: expenseCategories,
-              },
-            ]}
-            keyExtractor={(item, index) => `${item.type}-${index}`}
+            data={filteredCategories}
+            renderItem={renderCategory}
+            keyExtractor={(item) => item.id.toString()}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.listContainer}
-            renderItem={({ item }) => (
-              <View>
-                {renderSectionHeader(item.title, item.data.length)}
-                {item.data.length > 0 ? (
-                  item.data.map((category, index) => (
-                    <View key={category.id}>
-                      {renderCategory({ item: category })}
-                      {index < item.data.length - 1 && (
-                        <View style={styles.separator} />
-                      )}
-                    </View>
-                  ))
-                ) : (
-                  <View style={styles.emptySectionContainer}>
-                    <Text style={styles.emptySectionText}>
-                      No {item.title.toLowerCase()} yet
-                    </Text>
-                  </View>
-                )}
-                <View style={styles.sectionSeparator} />
-              </View>
-            )}
+            ItemSeparatorComponent={() => <View style={styles.separator} />}
           />
         )}
       </View>
+
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => {
+          setEditingCategoryId(undefined);
+          setShowCategoryModal(true);
+        }}
+      >
+        <Text style={styles.fabIcon}>+</Text>
+      </TouchableOpacity>
 
       <CategoryModal
         visible={showCategoryModal}
@@ -212,168 +206,127 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F8FAFC",
   },
-  header: {
+  tabContainer: {
+    flexDirection: "row",
     backgroundColor: "white",
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: "#F1F5F9",
+    borderBottomColor: "#E2E8F0",
   },
-  headerContent: {
+  tabButton: {
     flex: 1,
-  },
-  pageTitle: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: "#0F172A",
-    marginBottom: 4,
-  },
-  pageSubtitle: {
-    fontSize: 14,
-    color: "#64748B",
-    fontWeight: "500",
-  },
-  addButton: {
-    backgroundColor: "#8B5CF6",
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
-    shadowColor: "#8B5CF6",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
+    justifyContent: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    marginHorizontal: 2,
   },
-  addButtonIcon: {
-    color: "white",
-    fontSize: 18,
-    fontWeight: "600",
+  activeTabButton: {
+    backgroundColor: "#EFF6FF",
+  },
+  tabText: {
+    fontSize: 12,
+    fontWeight: "500",
+    color: "#64748B",
     marginRight: 4,
   },
-  addButtonText: {
-    color: "white",
-    fontSize: 16,
+  activeTabText: {
+    color: "#3B82F6",
     fontWeight: "600",
+  },
+  tabCount: {
+    backgroundColor: "#F1F5F9",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  activeTabCount: {
+    backgroundColor: "#DBEAFE",
+  },
+  tabCountText: {
+    fontSize: 10,
+    fontWeight: "600",
+    color: "#64748B",
+  },
+  activeTabCountText: {
+    color: "#3B82F6",
   },
   content: {
     flex: 1,
   },
   listContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-    marginTop: 8,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#374151",
-  },
-  countBadge: {
-    backgroundColor: "#F3F4F6",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  countText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#6B7280",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
   listItem: {
     backgroundColor: "white",
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderRadius: 16,
+    justifyContent: "space-between",
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 10,
+    marginBottom: 6,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
+    elevation: 1,
   },
   separator: {
-    height: 8,
-  },
-  sectionSeparator: {
-    height: 24,
+    height: 6,
   },
   itemLeft: {
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
   },
-
+  colorDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: "white",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 1,
+    elevation: 1,
+  },
   itemInfo: {
     flex: 1,
   },
   itemTitle: {
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 13,
+    fontWeight: "500",
     color: "#0F172A",
-    marginBottom: 6,
+    marginBottom: 2,
   },
   typeContainer: {
     flexDirection: "row",
   },
   typeBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 6,
   },
   typeText: {
-    fontSize: 12,
+    fontSize: 9,
     fontWeight: "600",
     textTransform: "capitalize",
   },
-  colorDot: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    marginRight: 12,
-    borderWidth: 2,
-    borderColor: "white",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  itemActions: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  editAction: {
-    padding: 8,
-    borderRadius: 8,
-    backgroundColor: "#F1F5F9",
-  },
-  editIcon: {
-    fontSize: 16,
-  },
   deleteAction: {
-    padding: 8,
-    borderRadius: 8,
+    padding: 4,
+    borderRadius: 4,
     backgroundColor: "#FEF2F2",
+    marginLeft: 8,
   },
-  deleteIcon: {
-    fontSize: 16,
+  actionText: {
+    fontSize: 10,
   },
   emptyContainer: {
     alignItems: "center",
@@ -381,43 +334,42 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
   },
   emptyIcon: {
-    fontSize: 64,
-    marginBottom: 16,
+    fontSize: 40,
+    marginBottom: 12,
+    opacity: 0.5,
   },
   emptyTitle: {
-    fontSize: 20,
+    fontSize: 14,
     fontWeight: "600",
-    color: "#0F172A",
-    textAlign: "center",
-    marginBottom: 8,
-  },
-  emptySubtext: {
-    fontSize: 16,
     color: "#64748B",
     textAlign: "center",
-    lineHeight: 24,
-    marginBottom: 24,
+    marginBottom: 6,
   },
-  emptyButton: {
+  emptySubtext: {
+    fontSize: 12,
+    color: "#94A3B8",
+    textAlign: "center",
+    lineHeight: 18,
+  },
+  fab: {
+    position: "absolute",
+    right: 16,
+    bottom: 16,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     backgroundColor: "#8B5CF6",
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 12,
-  },
-  emptyButtonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  emptySectionContainer: {
-    backgroundColor: "#F9FAFB",
-    padding: 16,
-    borderRadius: 12,
+    justifyContent: "center",
     alignItems: "center",
+    shadowColor: "#8B5CF6",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 6,
   },
-  emptySectionText: {
-    fontSize: 14,
-    color: "#9CA3AF",
-    fontStyle: "italic",
+  fabIcon: {
+    color: "white",
+    fontSize: 20,
+    fontWeight: "600",
   },
 });

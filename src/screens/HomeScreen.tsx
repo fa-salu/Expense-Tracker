@@ -4,13 +4,13 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
   Alert,
   Modal,
   Animated,
   StatusBar,
   Platform,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "@/hooks/useAuth";
 import { Dashboard } from "@/components/Dashboard";
 import { Ionicons } from "@expo/vector-icons";
@@ -68,15 +68,13 @@ export function HomeScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Status Bar Configuration */}
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <StatusBar
         barStyle="dark-content"
         backgroundColor="#ffffff"
         translucent={false}
       />
 
-      {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerContent}>
           <View style={styles.appTitle}>
@@ -98,7 +96,6 @@ export function HomeScreen() {
         </View>
       </View>
 
-      {/* Dropdown Menu */}
       <Modal
         visible={showDropdown}
         transparent={true}
@@ -173,7 +170,6 @@ export function HomeScreen() {
         </TouchableOpacity>
       </Modal>
 
-      {/* Main Content */}
       <View style={styles.content}>
         <Dashboard userId={user.id} />
       </View>
@@ -189,8 +185,7 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: "white",
     paddingHorizontal: 20,
-    paddingVertical: 12,
-    // Remove top padding since SafeAreaView handles it
+    paddingVertical: 8,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -246,7 +241,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.3)",
     justifyContent: "flex-start",
-    paddingTop: Platform.OS === "ios" ? 100 : 80, // Adjust for different platforms
+    paddingTop: Platform.OS === "ios" ? 100 : 80,
     alignItems: "flex-end",
     paddingRight: 20,
   },

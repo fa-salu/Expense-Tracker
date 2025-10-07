@@ -99,6 +99,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ userId }) => {
     <ScrollView
       style={styles.dashboardContent}
       showsVerticalScrollIndicator={false}
+      contentContainerStyle={styles.scrollContent}
     >
       <View style={styles.statsSection}>
         <View style={styles.statsRow}>
@@ -110,7 +111,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ userId }) => {
                 { color: stats.totalBalance >= 0 ? "#10B981" : "#EF4444" },
               ]}
             >
-              ${stats.totalBalance.toFixed(2)}
+              ₹{stats.totalBalance.toFixed(2)}
             </Text>
           </View>
         </View>
@@ -119,20 +120,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ userId }) => {
           <View style={[styles.statCard, styles.incomeCard]}>
             <Text style={styles.statTitle}>Income</Text>
             <Text style={[styles.statAmount, { color: "#10B981" }]}>
-              ${stats.totalIncome.toFixed(2)}
+              ₹{stats.totalIncome.toFixed(2)}
             </Text>
             <Text style={styles.statSubtitle}>
-              ${stats.monthlyIncome.toFixed(2)} this month
+              ₹{stats.monthlyIncome.toFixed(2)} this month
             </Text>
           </View>
 
           <View style={[styles.statCard, styles.expenseCard]}>
             <Text style={styles.statTitle}>Expenses</Text>
             <Text style={[styles.statAmount, { color: "#EF4444" }]}>
-              ${stats.totalExpense.toFixed(2)}
+              ₹{stats.totalExpense.toFixed(2)}
             </Text>
             <Text style={styles.statSubtitle}>
-              ${stats.monthlyExpense.toFixed(2)} this month
+              ₹{stats.monthlyExpense.toFixed(2)} this month
             </Text>
           </View>
         </View>
@@ -210,7 +211,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ userId }) => {
                   },
                 ]}
               >
-                {transaction.type === "income" ? "+" : "-"}$
+                {transaction.type === "income" ? "+" : "-"}₹
                 {parseFloat(transaction.amount).toFixed(2)}
               </Text>
             </View>
@@ -224,6 +225,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ userId }) => {
           </View>
         )}
       </View>
+
+      {/* Add bottom padding for navigation */}
+      <View style={styles.bottomPadding} />
     </ScrollView>
   );
 
@@ -337,85 +341,90 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F8FAFC",
   },
-
   content: {
     flex: 1,
   },
   dashboardContent: {
     flex: 1,
   },
+  scrollContent: {
+    flexGrow: 1,
+  },
+  bottomPadding: {
+    height: 80,
+  },
 
   statsSection: {
-    padding: 20,
+    padding: 16,
   },
   statsRow: {
     flexDirection: "row",
-    gap: 12,
-    marginBottom: 12,
+    gap: 10,
+    marginBottom: 10,
   },
   statCard: {
     flex: 1,
     backgroundColor: "white",
-    padding: 20,
-    borderRadius: 16,
+    padding: 16,
+    borderRadius: 12,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
   },
   balanceCard: {
-    borderLeftWidth: 4,
+    borderLeftWidth: 3,
     borderLeftColor: "#3B82F6",
   },
   incomeCard: {
-    borderLeftWidth: 4,
+    borderLeftWidth: 3,
     borderLeftColor: "#10B981",
   },
   expenseCard: {
-    borderLeftWidth: 4,
+    borderLeftWidth: 3,
     borderLeftColor: "#EF4444",
   },
   statTitle: {
-    fontSize: 14,
+    fontSize: 12,
     color: "#64748B",
-    marginBottom: 8,
+    marginBottom: 6,
     fontWeight: "500",
   },
   statAmount: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: "700",
-    marginBottom: 4,
+    marginBottom: 2,
   },
   statSubtitle: {
-    fontSize: 12,
+    fontSize: 10,
     color: "#94A3B8",
     fontWeight: "500",
   },
 
   quickActions: {
-    paddingHorizontal: 20,
-    marginBottom: 20,
+    paddingHorizontal: 16,
+    marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "600",
     color: "#0F172A",
-    marginBottom: 16,
+    marginBottom: 12,
   },
   actionCard: {
     backgroundColor: "white",
-    padding: 16,
-    borderRadius: 16,
+    padding: 14,
+    borderRadius: 12,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 12,
+    marginBottom: 10,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
   },
   actionLeft: {
     flexDirection: "row",
@@ -423,48 +432,48 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   actionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 12,
+    marginRight: 10,
   },
   actionEmoji: {
-    fontSize: 20,
+    fontSize: 16,
   },
   actionInfo: {
     flex: 1,
   },
   actionTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
     color: "#0F172A",
     marginBottom: 2,
   },
   actionSubtitle: {
-    fontSize: 14,
+    fontSize: 12,
     color: "#64748B",
   },
   actionArrow: {
-    fontSize: 18,
+    fontSize: 16,
     color: "#3B82F6",
     fontWeight: "600",
   },
 
   recentSection: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
   },
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 12,
   },
   viewAllText: {
     color: "#3B82F6",
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "600",
   },
   previewItem: {
@@ -472,52 +481,51 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 8,
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 6,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
+    elevation: 1,
   },
   previewLeft: {
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
   },
-
   previewInfo: {
     flex: 1,
   },
   previewTitle: {
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: "500",
     color: "#0F172A",
     marginBottom: 2,
   },
   previewSubtitle: {
-    fontSize: 13,
+    fontSize: 11,
     color: "#64748B",
   },
   previewAmount: {
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: "600",
   },
   noTransactions: {
     backgroundColor: "white",
-    padding: 24,
-    borderRadius: 12,
+    padding: 20,
+    borderRadius: 10,
     alignItems: "center",
   },
   noTransactionsText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "500",
     color: "#64748B",
     marginBottom: 4,
   },
   noTransactionsSubtext: {
-    fontSize: 14,
+    fontSize: 12,
     color: "#94A3B8",
   },
 
@@ -525,35 +533,35 @@ const styles = StyleSheet.create({
   bottomNavigation: {
     flexDirection: "row",
     backgroundColor: "white",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
     borderTopWidth: 1,
     borderTopColor: "#F1F5F9",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 8,
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 6,
   },
   navButton: {
     flex: 1,
     alignItems: "center",
-    paddingVertical: 8,
-    borderRadius: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
     marginHorizontal: 2,
   },
   activeNavButton: {
     backgroundColor: "#EFF6FF",
   },
   navIcon: {
-    fontSize: 20,
-    marginBottom: 4,
+    fontSize: 18,
+    marginBottom: 3,
   },
   activeNavIcon: {
     transform: [{ scale: 1.1 }],
   },
   navButtonText: {
-    fontSize: 12,
+    fontSize: 11,
     color: "#64748B",
     fontWeight: "500",
   },

@@ -6,7 +6,6 @@ import {
   StyleSheet,
   FlatList,
   Alert,
-  SafeAreaView,
 } from "react-native";
 import {
   TransactionService,
@@ -14,6 +13,7 @@ import {
 } from "@/services/transactionService";
 import { TransactionModal } from "@/components/TransactionModal";
 import type { Category } from "@/db/schema";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 interface TransactionsPageProps {
   userId: number;
@@ -54,69 +54,47 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
   };
 
   const renderTransaction = ({ item }: { item: TransactionWithCategory }) => (
-    <View style={styles.listItem}>
+    <TouchableOpacity
+      style={styles.listItem}
+      onPress={() => {
+        setEditingTransactionId(item.id);
+        setShowTransactionModal(true);
+      }}
+    >
       <View style={styles.itemLeft}>
-        <View style={styles.itemInfo}>
-          <Text style={styles.itemTitle}>{item.description}</Text>
-          <Text style={styles.itemSubtitle}>{item.categoryName}</Text>
-          <Text style={styles.itemDate}>
-            {new Date(item.date).toLocaleDateString()}
-          </Text>
-        </View>
-      </View>
-      <View style={styles.itemRight}>
         <Text
           style={[
             styles.itemAmount,
             { color: item.type === "income" ? "#10B981" : "#EF4444" },
           ]}
         >
-          {item.type === "income" ? "+" : "-"}$
+          {item.type === "income" ? "+" : "-"}₹
           {parseFloat(item.amount).toFixed(2)}
         </Text>
-        <View style={styles.itemActions}>
-          <TouchableOpacity
-            onPress={() => {
-              setEditingTransactionId(item.id);
-              setShowTransactionModal(true);
-            }}
-            style={styles.editAction}
-          >
-            <Text style={styles.editText}>✏️</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => handleDeleteTransaction(item.id)}
-            style={styles.deleteAction}
-          >
-            <Text style={styles.deleteText}>🗑️</Text>
-          </TouchableOpacity>
+        <View style={styles.itemInfo}>
+          <Text style={styles.itemTitle} numberOfLines={1}>
+            {item.description}
+          </Text>
+          <View style={styles.itemMeta}>
+            <Text style={styles.itemSubtitle}>{item.categoryName}</Text>
+            <Text style={styles.itemDate}>•</Text>
+            <Text style={styles.itemDate}>
+              {new Date(item.date).toLocaleDateString()}
+            </Text>
+          </View>
         </View>
       </View>
-    </View>
+      <TouchableOpacity
+        onPress={() => handleDeleteTransaction(item.id)}
+        style={styles.deleteAction}
+      >
+        <Text style={styles.actionText}>🗑️</Text>
+      </TouchableOpacity>
+    </TouchableOpacity>
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <Text style={styles.pageTitle}>Transactions</Text>
-          <Text style={styles.pageSubtitle}>
-            {transactions.length} transaction
-            {transactions.length !== 1 ? "s" : ""}
-          </Text>
-        </View>
-        <TouchableOpacity
-          onPress={() => {
-            setEditingTransactionId(undefined);
-            setShowTransactionModal(true);
-          }}
-          style={styles.addButton}
-        >
-          <Text style={styles.addButtonIcon}>+</Text>
-          <Text style={styles.addButtonText}>Add</Text>
-        </TouchableOpacity>
-      </View>
-
+    <SafeAreaView style={styles.container} edges={["left", "right"]}>
       <View style={styles.content}>
         <FlatList<TransactionWithCategory>
           data={transactions}
@@ -130,22 +108,22 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
               <Text style={styles.emptyIcon}>💰</Text>
               <Text style={styles.emptyTitle}>No transactions yet</Text>
               <Text style={styles.emptySubtext}>
-                Start tracking your expenses and income by adding your first
-                transaction
+                Start tracking your expenses and income
               </Text>
-              <TouchableOpacity
-                style={styles.emptyButton}
-                onPress={() => {
-                  setEditingTransactionId(undefined);
-                  setShowTransactionModal(true);
-                }}
-              >
-                <Text style={styles.emptyButtonText}>Add Transaction</Text>
-              </TouchableOpacity>
             </View>
           }
         />
       </View>
+
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => {
+          setEditingTransactionId(undefined);
+          setShowTransactionModal(true);
+        }}
+      >
+        <Text style={styles.fabIcon}>+</Text>
+      </TouchableOpacity>
 
       <TransactionModal
         visible={showTransactionModal}
@@ -168,163 +146,132 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: "white",
     paddingHorizontal: 20,
-    paddingVertical: 20,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 4,
+    paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#F1F5F9",
-  },
-  headerContent: {
-    flex: 1,
+    borderBottomColor: "#E2E8F0",
   },
   pageTitle: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: "700",
     color: "#0F172A",
-    marginBottom: 4,
+    marginBottom: 2,
   },
   pageSubtitle: {
-    fontSize: 14,
+    fontSize: 12,
     color: "#64748B",
     fontWeight: "500",
-  },
-  addButton: {
-    backgroundColor: "#3B82F6",
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
-    shadowColor: "#3B82F6",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  addButtonIcon: {
-    color: "white",
-    fontSize: 18,
-    fontWeight: "600",
-    marginRight: 4,
-  },
-  addButtonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "600",
   },
   content: {
     flex: 1,
   },
   listContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
   listItem: {
     backgroundColor: "white",
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderRadius: 16,
+    justifyContent: "space-between",
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 10,
+    marginBottom: 6,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
+    elevation: 1,
   },
   separator: {
-    height: 12,
+    height: 6,
   },
   itemLeft: {
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
+    gap: 12,
+  },
+  itemAmount: {
+    fontSize: 15,
+    fontWeight: "700",
+    minWidth: 70,
   },
   itemInfo: {
     flex: 1,
   },
   itemTitle: {
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 13,
+    fontWeight: "500",
     color: "#0F172A",
     marginBottom: 2,
   },
+  itemMeta: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
   itemSubtitle: {
-    fontSize: 14,
+    fontSize: 10,
     color: "#64748B",
-    marginBottom: 2,
+    fontWeight: "400",
   },
   itemDate: {
-    fontSize: 12,
+    fontSize: 10,
     color: "#94A3B8",
-    fontWeight: "500",
-  },
-  itemRight: {
-    alignItems: "flex-end",
-  },
-  itemAmount: {
-    fontSize: 16,
-    fontWeight: "700",
-    marginBottom: 8,
-  },
-  itemActions: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  editAction: {
-    padding: 8,
-    borderRadius: 8,
-    backgroundColor: "#F1F5F9",
-  },
-  editText: {
-    fontSize: 16,
+    fontWeight: "400",
   },
   deleteAction: {
-    padding: 8,
-    borderRadius: 8,
+    padding: 4,
+    borderRadius: 4,
     backgroundColor: "#FEF2F2",
+    marginLeft: 8,
   },
-  deleteText: {
-    fontSize: 16,
+  actionText: {
+    fontSize: 10,
   },
   emptyContainer: {
     alignItems: "center",
-    paddingVertical: 60,
+    paddingVertical: 80,
     paddingHorizontal: 40,
   },
   emptyIcon: {
-    fontSize: 64,
+    fontSize: 48,
     marginBottom: 16,
+    opacity: 0.5,
   },
   emptyTitle: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: "600",
-    color: "#0F172A",
+    color: "#64748B",
     textAlign: "center",
     marginBottom: 8,
   },
   emptySubtext: {
-    fontSize: 16,
-    color: "#64748B",
+    fontSize: 14,
+    color: "#94A3B8",
     textAlign: "center",
-    lineHeight: 24,
-    marginBottom: 24,
+    lineHeight: 20,
   },
-  emptyButton: {
+  fab: {
+    position: "absolute",
+    right: 16,
+    bottom: 16,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     backgroundColor: "#3B82F6",
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#3B82F6",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 6,
   },
-  emptyButtonText: {
+  fabIcon: {
     color: "white",
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: "600",
   },
 });
