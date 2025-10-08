@@ -317,7 +317,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ userId }) => {
         {activeView === "transactions" && (
           <TransactionsPage
             userId={userId}
-            transactions={transactions}
             categories={categories}
             onDataChange={loadData}
           />

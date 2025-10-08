@@ -6,12 +6,15 @@ import {
   StyleSheet,
   FlatList,
   Alert,
+  Modal,
+  ScrollView,
 } from "react-native";
 import {
   TransactionService,
   type TransactionWithCategory,
   type TransactionFilters,
 } from "@/services/transactionService";
+import { PDFService } from "@/services/PDFService";
 import { TransactionModal } from "@/components/TransactionModal";
 import { TransactionFilterBottomSheet } from "@/components/TransactionFilter";
 import { FilterButton } from "@/components/FilterButton";
@@ -31,6 +34,8 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
 }) => {
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [showFilterBottomSheet, setShowFilterBottomSheet] = useState(false);
+  const [showPdfPreview, setShowPdfPreview] = useState(false);
+  const [pdfUri, setPdfUri] = useState<string>("");
   const [editingTransactionId, setEditingTransactionId] = useState<number>();
   const [transactions, setTransactions] = useState<TransactionWithCategory[]>(
     []
@@ -51,6 +56,28 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
   useEffect(() => {
     loadTransactions(currentFilters);
   }, [userId]);
+
+  const handleGeneratePdf = async () => {
+    try {
+      const uri = await PDFService.generatePDF(transactions);
+      setPdfUri(uri);
+      setShowPdfPreview(true);
+    } catch (error) {
+      PDFService.handleError(error, "generate PDF report");
+    }
+  };
+
+  const handleDownloadPdf = () => {
+    PDFService.showDownloadSuccess();
+  };
+
+  const handleSharePdf = async () => {
+    try {
+      await PDFService.sharePDF(pdfUri);
+    } catch (error) {
+      PDFService.handleError(error, "share PDF");
+    }
+  };
 
   const handleDeleteTransaction = (id: number) => {
     Alert.alert(
@@ -136,10 +163,18 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
             {transactions.length !== 1 ? "s" : ""}
           </Text>
         </View>
-        <FilterButton
-          onPress={() => setShowFilterBottomSheet(true)}
-          filters={currentFilters}
-        />
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            style={styles.pdfButton}
+            onPress={handleGeneratePdf}
+          >
+            <Text style={styles.pdfIcon}>📄</Text>
+          </TouchableOpacity>
+          <FilterButton
+            onPress={() => setShowFilterBottomSheet(true)}
+            filters={currentFilters}
+          />
+        </View>
       </View>
 
       <View style={styles.content}>
@@ -192,6 +227,50 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
         categories={categories}
         currentFilters={currentFilters}
       />
+
+      <Modal
+        visible={showPdfPreview}
+        animationType="slide"
+        onRequestClose={() => setShowPdfPreview(false)}
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>PDF Preview</Text>
+            <TouchableOpacity
+              onPress={() => setShowPdfPreview(false)}
+              style={styles.closeButton}
+            >
+              <Text style={styles.closeButtonText}>✕</Text>
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.previewContainer}>
+            <View style={styles.previewContent}>
+              <Text style={styles.previewText}>
+                PDF generated successfully! 📄
+              </Text>
+              <Text style={styles.previewSubtext}>
+                Your transaction report is ready to download or share.
+              </Text>
+            </View>
+          </ScrollView>
+
+          <View style={styles.modalActions}>
+            <TouchableOpacity
+              style={[styles.actionButton, styles.downloadButton]}
+              onPress={handleDownloadPdf}
+            >
+              <Text style={styles.actionButtonText}>⬇️ Download</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.actionButton, styles.shareButton]}
+              onPress={handleSharePdf}
+            >
+              <Text style={styles.actionButtonText}>📤 Share</Text>
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -221,6 +300,22 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#64748B",
     fontWeight: "500",
+  },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  pdfButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    backgroundColor: "#F1F5F9",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  pdfIcon: {
+    fontSize: 20,
   },
   content: {
     flex: 1,
@@ -338,6 +433,84 @@ const styles = StyleSheet.create({
   fabIcon: {
     color: "white",
     fontSize: 20,
+    fontWeight: "600",
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: "#F8FAFC",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: "white",
+    borderBottomWidth: 1,
+    borderBottomColor: "#E2E8F0",
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#0F172A",
+  },
+  closeButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#F1F5F9",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  closeButtonText: {
+    fontSize: 18,
+    color: "#64748B",
+  },
+  previewContainer: {
+    flex: 1,
+  },
+  previewContent: {
+    padding: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  previewText: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#0F172A",
+    textAlign: "center",
+    marginBottom: 12,
+  },
+  previewSubtext: {
+    fontSize: 14,
+    color: "#64748B",
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  modalActions: {
+    flexDirection: "row",
+    gap: 12,
+    padding: 20,
+    backgroundColor: "white",
+    borderTopWidth: 1,
+    borderTopColor: "#E2E8F0",
+  },
+  actionButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  downloadButton: {
+    backgroundColor: "#3B82F6",
+  },
+  shareButton: {
+    backgroundColor: "#10B981",
+  },
+  actionButtonText: {
+    color: "white",
+    fontSize: 16,
     fontWeight: "600",
   },
 });
