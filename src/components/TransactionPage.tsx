@@ -7,8 +7,9 @@ import {
   FlatList,
   Alert,
   Modal,
-  ScrollView,
+  ActivityIndicator,
 } from "react-native";
+import { WebView } from "react-native-webview";
 import {
   TransactionService,
   type TransactionWithCategory,
@@ -36,6 +37,9 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
   const [showFilterBottomSheet, setShowFilterBottomSheet] = useState(false);
   const [showPdfPreview, setShowPdfPreview] = useState(false);
   const [pdfUri, setPdfUri] = useState<string>("");
+  const [previewHtml, setPreviewHtml] = useState<string>("");
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const [editingTransactionId, setEditingTransactionId] = useState<number>();
   const [transactions, setTransactions] = useState<TransactionWithCategory[]>(
     []
@@ -58,17 +62,30 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
   }, [userId]);
 
   const handleGeneratePdf = async () => {
+    if (transactions.length === 0) {
+      Alert.alert(
+        "No Data",
+        "No transactions available to generate PDF report."
+      );
+      return;
+    }
+
+    setIsGeneratingPdf(true);
     try {
+      // Generate actual PDF for sharing/downloading
       const uri = await PDFService.generatePDF(transactions);
+
+      const summary = PDFService.calculateSummary(transactions);
+      const html = PDFService.generatePreviewHtml(transactions, summary);
+
       setPdfUri(uri);
+      setPreviewHtml(html);
       setShowPdfPreview(true);
     } catch (error) {
       PDFService.handleError(error, "generate PDF report");
+    } finally {
+      setIsGeneratingPdf(false);
     }
-  };
-
-  const handleDownloadPdf = () => {
-    PDFService.showDownloadSuccess();
   };
 
   const handleSharePdf = async () => {
@@ -165,10 +182,18 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
         </View>
         <View style={styles.headerActions}>
           <TouchableOpacity
-            style={styles.pdfButton}
+            style={[
+              styles.pdfButton,
+              isGeneratingPdf && styles.pdfButtonDisabled,
+            ]}
             onPress={handleGeneratePdf}
+            disabled={isGeneratingPdf}
           >
-            <Text style={styles.pdfIcon}>📄</Text>
+            {isGeneratingPdf ? (
+              <ActivityIndicator size="small" color="#64748B" />
+            ) : (
+              <Text style={styles.pdfIcon}>📄</Text>
+            )}
           </TouchableOpacity>
           <FilterButton
             onPress={() => setShowFilterBottomSheet(true)}
@@ -228,6 +253,7 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
         currentFilters={currentFilters}
       />
 
+      {/* Fixed PDF Preview Modal with proper styled content */}
       <Modal
         visible={showPdfPreview}
         animationType="slide"
@@ -235,7 +261,7 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
       >
         <SafeAreaView style={styles.modalContainer}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>PDF Preview</Text>
+            <Text style={styles.modalTitle}>📄 Report Preview</Text>
             <TouchableOpacity
               onPress={() => setShowPdfPreview(false)}
               style={styles.closeButton}
@@ -244,24 +270,35 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
             </TouchableOpacity>
           </View>
 
-          <ScrollView style={styles.previewContainer}>
-            <View style={styles.previewContent}>
-              <Text style={styles.previewText}>
-                PDF generated successfully! 📄
-              </Text>
-              <Text style={styles.previewSubtext}>
-                Your transaction report is ready to download or share.
-              </Text>
-            </View>
-          </ScrollView>
+          <View style={styles.previewContainer}>
+            {previewHtml ? (
+              <WebView
+                source={{ html: previewHtml }}
+                style={styles.webview}
+                startInLoadingState={true}
+                renderLoading={() => (
+                  <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#3B82F6" />
+                    <Text style={styles.loadingText}>Loading Preview...</Text>
+                  </View>
+                )}
+                javaScriptEnabled={true}
+                domStorageEnabled={true}
+                scrollEnabled={true}
+                showsVerticalScrollIndicator={true}
+                showsHorizontalScrollIndicator={false}
+                scalesPageToFit={false}
+                bounces={true}
+              />
+            ) : (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#3B82F6" />
+                <Text style={styles.loadingText}>Preparing Preview...</Text>
+              </View>
+            )}
+          </View>
 
           <View style={styles.modalActions}>
-            <TouchableOpacity
-              style={[styles.actionButton, styles.downloadButton]}
-              onPress={handleDownloadPdf}
-            >
-              <Text style={styles.actionButtonText}>⬇️ Download</Text>
-            </TouchableOpacity>
             <TouchableOpacity
               style={[styles.actionButton, styles.shareButton]}
               onPress={handleSharePdf}
@@ -313,6 +350,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#F1F5F9",
     justifyContent: "center",
     alignItems: "center",
+  },
+  pdfButtonDisabled: {
+    opacity: 0.6,
   },
   pdfIcon: {
     fontSize: 20,
@@ -468,24 +508,22 @@ const styles = StyleSheet.create({
   },
   previewContainer: {
     flex: 1,
+    backgroundColor: "#ffffff",
   },
-  previewContent: {
-    padding: 40,
-    alignItems: "center",
+  webview: {
+    flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
     justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f9fafb",
   },
-  previewText: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#0F172A",
-    textAlign: "center",
-    marginBottom: 12,
-  },
-  previewSubtext: {
+  loadingText: {
+    marginTop: 12,
     fontSize: 14,
-    color: "#64748B",
-    textAlign: "center",
-    lineHeight: 20,
+    color: "#6b7280",
+    fontWeight: "500",
   },
   modalActions: {
     flexDirection: "row",
@@ -501,6 +539,9 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
+  },
+  actionButtonDisabled: {
+    opacity: 0.6,
   },
   downloadButton: {
     backgroundColor: "#3B82F6",
